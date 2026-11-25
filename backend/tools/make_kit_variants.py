@@ -85,8 +85,9 @@ def main():
         for old in LIB.glob(f"{v['key']}-*.zip"):
             old.unlink()
         css_v = css.split("/* ===== VARIANT")[0].rstrip() + "\n" + v["css"]
-        m = {**man, "key": v["key"], "name": v["name"], "description": v["description"], "version": "1.0.9"}
-        out = LIB / f"{v['key']}-1.0.9.zip"
+        ver = f"1.0.{int(str(man['version']).split('.')[2])}"  # follows the patch of the standard set, so a site that has the variant installed gets the new components
+        m = {**man, "key": v["key"], "name": v["name"], "description": v["description"], "version": ver}
+        out = LIB / f"{v['key']}-{ver}.zip"
         with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as w:
             w.writestr("components.json", json.dumps(m, indent=2, ensure_ascii=False))
             w.writestr("components.css", css_v)

@@ -325,6 +325,45 @@ def bg_key(value):
     """The choice (all | hero | none) from the text of an answer, or ''."""
     v = str(value or "").strip().lower()
     return next((k for k, t in BG_OPTIONS.items() if v in (k, t.lower())), "")
+HERO_QID = "herostyle"
+HERO_OPTIONS = {"auto": "Laat de ontwerper kiezen", "photo": "Grote foto over de volle breedte met tekst erop", "editorial": "Redactioneel: grote typografie of een tekstkaart (krant of tijdschrift)",
+                "visual": "Beeldrijk: een collage of een brede foto", "classic": "Klassiek: tekst naast een foto", "bold": "Donker en krachtig"}  # the answers of the question about the opening (hero) -> brief["hero_style"]
+
+# The design directions: a direction decides how the opening (hero) and the rhythm of the pages look, so websites are not all the same. The customer chooses one (question "herostyle") or the system picks one
+# that fits the kind of website and the feeling of the style, with some chance, so the same request does not give the same design twice. hero = the components of the set that fit (the first ones are preferred).
+DIRECTIONS = {
+    "photo": {"heroes": ["ui-hero-image", "ui-hero-image-center", "ui-hero-card"], "text": "PHOTO-LED: the opening is a big photo over the full width with the text on it (ui-hero-image or ui-hero-image-center; ui-hero-card for a calmer look). Use big photos further down too (split sections with large pictures, a media object), alternate full-width bands and tinted bands, and keep the text short and strong."},
+    "editorial": {"heroes": ["ui-hero-type", "ui-hero-card", "ui-hero-wide"], "text": "EDITORIAL (newspaper or magazine): the opening is typographic (ui-hero-type) or a text card on a photo (ui-hero-card). Work with a grid like a front page: bands with 2-1 and 3 columns, a big quote, headlines with eyebrows, few but large photos, lots of white space and strong typography."},
+    "visual": {"heroes": ["ui-hero-collage", "ui-hero-wide", "ui-hero-image"], "text": "IMAGE-RICH: the opening shows several pictures (ui-hero-collage) or one wide panorama (ui-hero-wide). Show the work in galleries or media objects, use pictures in the bands and let the pictures tell more than the text."},
+    "classic": {"heroes": ["ui-hero-split", "ui-hero-split-reverse"], "text": "CLASSIC: the opening has text next to a picture (ui-hero-split, or ui-hero-split-reverse for a picture on the left). A calm, trustworthy page: full-width bands, services in cards, reviews, a clear call to action."},
+    "bold": {"heroes": ["ui-hero-dark", "ui-hero-image-center", "ui-hero-type"], "text": "BOLD: a dark, strong opening (ui-hero-dark, or ui-hero-image-center on a dark photo). Big headlines, high contrast, short sentences, dark bands in between, one clear accent colour."},
+}
+DIRECTION_BY_KIND = {"company": ["classic", "photo", "bold"], "shop": ["photo", "visual", "classic"], "community": ["photo", "bold", "visual"], "agenda": ["editorial", "photo", "classic"],
+                     "blog": ["editorial", "photo", "visual"], "portfolio": ["visual", "editorial", "photo"], "club": ["photo", "bold", "visual"]}
+DIRECTION_BY_STYLE = {"luxe": ["photo", "editorial"], "minimalistisch": ["editorial", "classic"], "creatief": ["visual", "bold"], "speels": ["visual", "bold"], "klassiek": ["classic", "editorial"],
+                      "zakelijk": ["classic", "photo"], "modern": ["photo", "bold", "visual"], "warm": ["photo", "classic"], "natuurlijk": ["photo", "visual"], "technisch": ["bold", "classic"]}
+
+
+def hero_key(value):
+    """The choice (auto | photo | editorial | visual | classic | bold) from the text of an answer, or ''."""
+    v = str(value or "").strip().lower()
+    return next((k for k, t in HERO_OPTIONS.items() if v in (k, t.lower())), "")
+
+
+def pick_direction(b, rnd=None):
+    """The design direction of a website: what the customer chose (hero_style), else one that fits the kind and the style, with some chance. Returns a key of DIRECTIONS."""
+    import random
+
+    chosen = (b or {}).get("hero_style")
+    if chosen in DIRECTIONS:
+        return chosen
+    rnd = rnd or random
+    pool = list(DIRECTION_BY_KIND.get(str((b or {}).get("kind") or "company"), DIRECTION_BY_KIND["company"]))
+    for t in (b or {}).get("style_tags") or []:
+        pool += DIRECTION_BY_STYLE.get(t, []) * 2  # the feeling of the style counts double
+    return rnd.choice(pool)
+
+
 KIND_INSTALL = {"company": "bedrijfswebsite", "shop": "webshop", "community": "zakelijk-netwerk", "agenda": "stichting", "blog": "standaard-website", "portfolio": "standaard-website", "club": "sportclub"}  # the installation that fits a kind of website when the designer gives no answer
 
 
@@ -368,7 +407,10 @@ def _with_installation(qs, br, msgs):
     bq = next((x for x in qs if x.get("id") == BG_QID), None)
     bdef = next((t for t in BG_OPTIONS.values() if bq and t.lower() == str(bq.get("default") or "").strip().lower()), BG_OPTIONS["hero"])
     bg = {"id": BG_QID, "q": "Wil je achtergrondafbeeldingen gebruiken in de blokken en de hero?", "type": "choice", "options": list(BG_OPTIONS.values()), "default": bdef}
-    return [x for x in qs if x.get("id") not in (INSTALL_QID, BG_QID)] + [bg, new] if qs else qs
+    hq = next((x for x in qs if x.get("id") == HERO_QID), None)
+    hdef = next((t for t in HERO_OPTIONS.values() if hq and t.lower() == str(hq.get("default") or "").strip().lower()), HERO_OPTIONS["auto"])
+    hero = {"id": HERO_QID, "q": "Hoe moet de opening (hero) van de website eruitzien?", "type": "choice", "options": list(HERO_OPTIONS.values()), "default": hdef}
+    return [x for x in qs if x.get("id") not in (INSTALL_QID, BG_QID, HERO_QID)] + [hero, bg, new] if qs else qs
 IMG_OK = {e for e in R.IMAGE_EXT if e != "svg"}
 MAX_PHOTOS = R.MAX_IMAGES
 
@@ -544,6 +586,10 @@ def clean_brief(patch, old):
         b["installation"] = install_key(p["installation"])
     if "bg_images" in p:
         b["bg_images"] = p["bg_images"] if p["bg_images"] in BG_OPTIONS else ""
+    if "hero_style" in p:
+        b["hero_style"] = p["hero_style"] if p["hero_style"] in DIRECTIONS else ""
+    if "direction" in p:
+        b["direction"] = p["direction"] if p["direction"] in DIRECTIONS else ""
     if "style_tags" in p:
         b["style_tags"] = [t for t in (p["style_tags"] if isinstance(p["style_tags"], list) else []) if t in STYLE_TAGS][:6]
     if "colors" in p:
@@ -1220,6 +1266,9 @@ def _brief_text(b):
         lines.append("NO CALL TO ACTION: the customer chose no main goal. Do NOT design a call-to-action section or banner, no 'Request a ...' / 'Contact us' / 'Get started' buttons in the hero or the navbar, and no call-to-action wording anywhere.")
     if isinstance(b.get("extras"), list):
         lines.append("FUNCTIONS: the customer chose only these extra functions: " + (", ".join(b["extras"]) or "none") + ". Do NOT add any other function: no FAQ, agenda/appointments/booking, web shop, community, login or sign-up, documents/downloads, newsletter or contact form unless it is in this list (a plain contact section with the contact details is always fine). No login, sign-up, account or downloads links in the menu or the footer.")
+    d_ = DIRECTIONS.get(b.get("hero_style") or b.get("direction") or "")
+    if d_:
+        lines.append("DESIGN DIRECTION (follow it, so this website does not look like every other one): " + d_["text"] + " Heroes that fit: " + ", ".join(d_["heroes"]) + ". Do not use any other opening than these unless the customer asks for it.")
     bgi = b.get("bg_images")
     if bgi == "all":
         lines.append("BACKGROUND PICTURES: the customer WANTS background pictures: give the hero AND two or three other bands a photo as background (style=\"background-image:linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('img/FILE');background-size:cover;background-position:center\" on the band, a photo from the list, each photo once), with a dark layer over it and light text so everything stays readable.")
@@ -1706,6 +1755,10 @@ def _site_plan(pk, job, pages):
 
     b = job.brief or {}
     tags = [c["easy2edit_tag"] for c in componentpacks.get(b.get("component_set") or None)["components"]]
+    if not (b.get("hero_style") or b.get("direction")):  # no choice of the customer: the system picks a design direction, and keeps it for this design (later changes follow it)
+        b = {**b, "direction": pick_direction(b)}
+        SiteDesignJob.objects.filter(pk=pk).update(brief={**(SiteDesignJob.objects.get(pk=pk).brief or {}), "direction": b["direction"]})
+    heroes = [h for h in DIRECTIONS[b.get("hero_style") or b.get("direction")]["heroes"] if h in tags] or ["ui-hero-split"]
     from . import pagevalidate as _pv
 
     lst = _pv.catalogus_tekst(b.get("component_set") or None)  # the catalogue: made from the component set, never written by hand
@@ -1728,7 +1781,8 @@ def _site_plan(pk, job, pages):
               + (f"SYSTEM OBJECTS (live parts of easy2edit that work by themselves; a section is {{\"sysobject\": \"slug\", \"id\": \"x\", \"title\": \"heading above it\"}}):\n{obj_list}\n"
                  "USE THEM: photos together (a gallery, slider, carousel, a row or collage of pictures) are ALWAYS a media object, never a ui-gallery or a row of images: choose the style that fits the content (carousel, slideshow, coverflow, mosaic, wall, filmstrip, album ...) and use a different style where there are several. "
                  "Events or an agenda, a product overview, documents or a showcase are the object of that module when it is in the list. Use at least one fitting system object on a page when the list has one that fits; never invent a slug, use only the slugs above. " if obj_list else "")
-              + 'Answer: {"pages": [{"file": "index.html", "title": "page title (max 60 chars)", "description": "meta description (max 155 chars)", "sections": [{"tag": "ui-hero-split", "id": "hero", "menu": "", "goal": "what this section says, in one sentence"}]}], "brand": "short brand name for the menu"}\n'
+              + 'Answer: {"pages": [{"file": "index.html", "title": "page title (max 60 chars)", "description": "meta description (max 155 chars)", "sections": [{"tag": "ui-...", "id": "x", "menu": "", "goal": "what this section says, in one sentence"}]}], "brand": "short brand name for the menu"}\n'
+              f"The FIRST section of the start page is the opening: one of these heroes, chosen for this website: {', '.join(heroes)}. Do not use ui-hero-split unless it is in that list. "
               f"Available tags:\n{lst}")
     plan = {}
     ref_imgs = refs_images(b)
@@ -1775,12 +1829,12 @@ def _site_plan(pk, job, pages):
         if i == 0 and media and len(_photo_files(b)) >= 6 and not any(str(x.get("sysobject") or "").startswith("media-") for x in secs) and secs:  # many photos chosen: they are shown in a slider, not only in two picture places
             secs.insert(min(3, len(secs)), {"tag": None, "sysobject": media[1 % len(media)], "id": "fotos", "goal": "All the photos of the customer", "menu": ""})
         if not secs and len(pages) == 1:  # a one pager always gets a complete standard plan
-            secs = [{"tag": "ui-hero-split", "id": "hero", "goal": f"Introduce {title}", "menu": ""}, {"tag": "ui-split", "id": "about", "goal": "Who we are and what we stand for", "menu": "About us"},
+            secs = [{"tag": heroes[0], "id": "hero", "goal": f"Introduce {title}", "menu": ""}, {"tag": "ui-split", "id": "about", "goal": "Who we are and what we stand for", "menu": "About us"},
                     {"tag": "ui-features", "id": "services", "goal": "The services or the offer", "menu": "Services"}, {"tag": "ui-testimonials", "id": "reviews", "goal": "What customers say", "menu": "Reviews"},
                     {"tag": "ui-faq", "id": "faq", "goal": "The most asked questions", "menu": "FAQ"} if "ui-faq" not in blocked_tags(b.get("extras") if isinstance(b.get("extras"), list) else None) else None, {"tag": "ui-cta", "id": "contact", "goal": "Contact: ask for a quote or call", "menu": "Contact"}]
             secs = [x for x in secs if x and x["tag"] in tags] or [x for x in secs if x]
         if not secs:  # standard plan
-            secs = ([{"tag": "ui-hero-split", "id": "hero", "goal": f"Introduce {title}"}, {"tag": "ui-features", "id": "voordelen", "goal": "The main benefits"}] if i == 0 else [{"tag": "ui-section-heading", "id": "intro", "goal": f"Introduction of {title}"}, {"tag": "ui-split", "id": "tekst", "goal": f"The story of {title}"}]) + [{"tag": "ui-cta", "id": "contact", "goal": "Invite to get in touch"}]
+            secs = ([{"tag": heroes[0], "id": "hero", "goal": f"Introduce {title}"}, {"tag": "ui-features", "id": "voordelen", "goal": "The main benefits"}] if i == 0 else [{"tag": "ui-section-heading", "id": "intro", "goal": f"Introduction of {title}"}, {"tag": "ui-split", "id": "tekst", "goal": f"The story of {title}"}]) + [{"tag": "ui-cta", "id": "contact", "goal": "Invite to get in touch"}]
         out_pages.append({"file": f, "title": str(p.get("title") or title)[:60], "description": str(p.get("description") or "")[:155], "sections": secs})
     block = blocked_tags(b.get("extras") if isinstance(b.get("extras"), list) else None)
     if b.get("no_cta"):
@@ -3345,6 +3399,10 @@ def save_answers(job, index, ans, own):
         key = install_key(clean[INSTALL_QID])
         if key:
             upd["brief"] = {**(job.brief or {}), "installation": key}
+    if HERO_QID in clean:  # the look of the opening: a design direction ("auto" = the system picks one that fits)
+        hk = hero_key(clean[HERO_QID])
+        if hk:
+            upd["brief"] = {**(upd.get("brief") or job.brief or {}), "hero_style": "" if hk == "auto" else hk}
     if BG_QID in clean:  # background pictures in the hero and the blocks: yes, only the hero, or no
         bk = bg_key(clean[BG_QID])
         if bk:
