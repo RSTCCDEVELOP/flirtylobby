@@ -5235,3 +5235,6 @@ html[data-pb-nohead]:not([data-pbbar="1"]) .site-credit.only-edit { display: fle
 /* easy2edit admin setup -> Header en footer */
 html[data-adm-header="compact"] { --header-h: 52px; } html[data-adm-header="large"] { --header-h: 80px; }
 html[data-adm-credit="off"] .site-credit { display: none; }
+@media (min-width: 861px) { /* de header is even breed als de pagina (met de zijbalk), net als op de website; "Hele scherm" laat hem over de volle breedte */
+  html[data-adm-width]:not([data-adm-headw="full"]) .shell > .topbar { left: var(--adm-gap); right: var(--adm-gap); box-sizing: border-box; border-inline: 1px solid var(--line); }
+}

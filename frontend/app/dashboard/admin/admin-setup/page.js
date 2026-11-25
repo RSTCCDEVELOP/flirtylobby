@@ -223,7 +223,8 @@ export default function AdminSetup() {
         <div className="as-cols">
           <section className="as-block">
             <h3>{tx("Header")}</h3>
-            <div className="as-segs"><Seg label="Hoogte van de header" value={s.header_height || "normal"} onChange={(v) => can && save({ header_height: v })} rows={[["compact", "Compact"], ["normal", "Normaal"], ["large", "Ruim"]]} /></div>
+            <div className="as-segs"><Seg label="Breedte van de header" value={s.header_width || "page"} onChange={(v) => can && save({ header_width: v })} rows={[["page", "Zoals de pagina"], ["full", "Hele scherm"]]} /><Seg label="Hoogte van de header" value={s.header_height || "normal"} onChange={(v) => can && save({ header_height: v })} rows={[["compact", "Compact"], ["normal", "Normaal"], ["large", "Ruim"]]} /></div>
+            <p>{tx("Bij een beperkte paginabreedte (tab Uiterlijk) is de header even breed als de pagina, met de zijbalk erbij.")}</p>
             <p>{tx("Wat er in de header van het dashboard staat. Het bewerk-knopje en het gebruikersmenu blijven altijd staan.")}</p>
             <div className="as-grid">
               {HEADER_ITEMS.map(([k, label, hint]) => <Switch key={k} checked={s.header_items?.[k] !== false} disabled={!can} onChange={(v) => save({ header_items: { ...s.header_items, [k]: v } })} label={label} hint={hint} />)}
