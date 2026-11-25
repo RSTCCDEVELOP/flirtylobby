@@ -5163,7 +5163,10 @@ html[data-adm-width="wide"] .shell { --adm-area: 1500px; }
 html[data-adm-width="normal"] .shell { --adm-area: 1200px; }
 html[data-adm-width="site"] .shell { --adm-area: var(--content-w, 1100px); }
 @media (min-width: 861px) {
-  html[data-adm-width] .shell { background: color-mix(in srgb, var(--bg) 90%, var(--text)); }  /* the colours follow the theme: the outside of the width is a shade of the admin background, the page itself has the admin background, the menu the card colour */
+  html[data-adm-width] .shell { background: color-mix(in srgb, var(--bg), #000 22%); }  /* the sides left and right of the page are darker than the page, from the theme (as the login screen) */
+  html[data-adm-width][data-adm-frame="login"] .shell { background: var(--login-bg); }
+  html[data-adm-width][data-adm-frame="light"] .shell { background: color-mix(in srgb, var(--bg) 90%, var(--text)); }
+  html[data-adm-width][data-adm-frame="none"] .shell { background: var(--bg); }
   html[data-adm-width] .shell .content { background: var(--bg); }
   html[data-adm-width] .shell { --adm-gap: max(0px, calc((100vw - var(--adm-area) - var(--sidebar-w) - 2 * var(--pad)) / 2)); }
   html[data-adm-width] .shell .sidebar { left: var(--adm-gap); border-left: 1px solid var(--line); }
@@ -5179,3 +5182,8 @@ html[data-adm-font="large"] .shell { font-size: 112%; }
 html[data-adm-sbw="narrow"] .shell:not(.collapsed) { --sidebar-w: 200px; }
 html[data-adm-sbw="wide"] .shell:not(.collapsed) { --sidebar-w: 290px; }
 html[data-adm-motion="off"] .shell *, html[data-adm-motion="off"] .shell *::before, html[data-adm-motion="off"] .shell *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+.as-style { display: grid; gap: .2rem; text-align: left; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); cursor: pointer; }
+.as-style small { color: var(--muted); font-size: .78rem; }
+.as-style:hover { border-color: var(--blue); }
+.as-style.on { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, var(--card)); }
+.as-style:disabled { opacity: .6; cursor: default; }

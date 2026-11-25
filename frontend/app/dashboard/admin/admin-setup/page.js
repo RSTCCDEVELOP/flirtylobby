@@ -20,6 +20,13 @@ import { IconGrid, IconHome, IconMenu, IconKey, IconPalette } from "../../../../
 
 // easy2edit admin setup: the starting values of the admin and the dashboards for the whole website. A person can still choose for himself (tiles or list, page size, sidebar).
 const SIZES = [["5", "5"], ["10", "10"], ["25", "25"], ["100", "100"], ["all", "Alles"]];
+// A few ready-made styles for the dashboard: one click sets several choices of the tab Uiterlijk (and the sidebar) at once.
+const STYLES = [
+  ["classic", "Klassiek", "De standaard: hele scherm, normale ruimte.", { width: "full", density: "normal", tile_size: "normal", font: "normal", sidebar_width: "normal", reduce_motion: false }],
+  ["business", "Zakelijk", "Genormeerde breedte, compact en veel tegels in beeld.", { width: "normal", density: "compact", tile_size: "small", font: "normal", sidebar_width: "narrow", reduce_motion: false, frame: "dark" }],
+  ["site", "Zoals de website", "Even breed als de pagina's van de website, met donkere zijkanten.", { width: "site", density: "normal", tile_size: "normal", font: "normal", sidebar_width: "normal", reduce_motion: false, frame: "dark" }],
+  ["comfort", "Rustig en groot", "Ruim, grote letters en tegels, zonder bewegingen.", { width: "wide", density: "roomy", tile_size: "large", font: "large", sidebar_width: "wide", reduce_motion: true, frame: "light" }],
+];
 const BLOCKS = [
   ["ai", "AI-gebruik", "Het blok met het AI-gebruik en de kosten (alleen voor wie AI beheert)."],
   ["presets", "Standaard installaties", "Het blok om in één keer een soort website in te stellen."],
@@ -204,10 +211,25 @@ export default function AdminSetup() {
       {tab === "look" && (
         <div className="as-wrap">
           <section className="as-block">
+            <h3>{tx("Kies een stijl")}</h3>
+            <p>{tx("Een klik zet meerdere keuzes tegelijk. Daarna kun je alles nog los aanpassen.")}</p>
+            <div className="as-grid">
+              {STYLES.map(([k, label, hint, vals]) => {
+                const on = Object.entries(vals).every(([a, b]) => s[a] === b);
+                return (
+                  <button type="button" key={k} className={`as-style${on ? " on" : ""}`} disabled={!can} aria-pressed={on} onClick={() => save(vals)}>
+                    <strong>{tx(label)}</strong><small>{tx(hint)}</small>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+          <section className="as-block">
             <h3>{tx("Breedte en ruimte")}</h3>
             <p>{tx("De wijziging is meteen te zien. Dit geldt voor het hele dashboard van iedereen.")}</p>
             <Seg label="Breedte van de inhoud" value={s.width} onChange={(v) => can && save({ width: v })} rows={[["full", "Hele scherm"], ["wide", "Breed"], ["normal", "Normaal"], ["site", "Zoals de website"]]} />
             <p style={{ margin: 0 }}>{tx("\"Zoals de website\" gebruikt de breedte van de inhoud van de pagina's uit het thema, zodat de admin even breed is als de website.")}</p>
+            <Seg label="Kleur van de zijkanten" value={s.frame} onChange={(v) => can && save({ frame: v })} rows={[["dark", "Donkerder"], ["login", "Zoals het inlogscherm"], ["light", "Licht"], ["none", "Paginakleur"]]} />
             <Seg label="Ruimte (dichtheid)" value={s.density} onChange={(v) => can && save({ density: v })} rows={[["compact", "Compact"], ["normal", "Normaal"], ["roomy", "Ruim"]]} />
             <Seg label="Grootte van de tegels" value={s.tile_size} onChange={(v) => can && save({ tile_size: v })} rows={[["small", "Klein"], ["normal", "Normaal"], ["large", "Groot"]]} />
           </section>

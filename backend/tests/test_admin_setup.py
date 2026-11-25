@@ -112,8 +112,8 @@ def test_changing_the_company_in_its_own_screen_also_goes_to_the_master(licensed
 
 
 def test_the_look_of_the_admin_has_choices_that_are_checked():
-    ok, err = adminsetup.validate({"width": "site", "density": "roomy", "tile_size": "large", "font": "large", "sidebar_width": "wide", "reduce_motion": True})
-    assert not err and ok == {"width": "site", "density": "roomy", "tile_size": "large", "font": "large", "sidebar_width": "wide", "reduce_motion": True}
-    for bad in ({"width": "x"}, {"density": "x"}, {"tile_size": "x"}, {"font": "x"}, {"sidebar_width": "x"}):
+    ok, err = adminsetup.validate({"width": "site", "density": "roomy", "tile_size": "large", "font": "large", "sidebar_width": "wide", "reduce_motion": True, "frame": "login"})
+    assert not err and ok == {"width": "site", "density": "roomy", "tile_size": "large", "font": "large", "sidebar_width": "wide", "reduce_motion": True, "frame": "login"}
+    for bad in ({"frame": "x"}, {"width": "x"}, {"density": "x"}, {"tile_size": "x"}, {"font": "x"}, {"sidebar_width": "x"}):
         assert adminsetup.validate(bad)[1], bad
     assert adminsetup.DEFAULTS["width"] == "full" and adminsetup.DEFAULTS["density"] == "normal"  # nothing changes until the setup says so

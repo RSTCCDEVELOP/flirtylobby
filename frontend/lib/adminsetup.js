@@ -12,7 +12,7 @@ import { api } from "./api";
 
 // The starting values of the admin and the dashboards (Admin -> easy2edit admin setup). One request for the whole page; every screen reads it with useAdminSetup().
 // A choice of the person himself (tiles or list, page size, sidebar) always wins over these values.
-export const SETUP_DEFAULTS = { view: "tiles", page_size: "all", hidden_tiles: [], blocks: { ai: true, presets: true, backup: true, about: true }, sidebar: "remember", menu_search: true, sidebar_width: "normal", width: "full", density: "normal", tile_size: "normal", font: "normal", reduce_motion: false };
+export const SETUP_DEFAULTS = { view: "tiles", page_size: "all", hidden_tiles: [], blocks: { ai: true, presets: true, backup: true, about: true }, sidebar: "remember", menu_search: true, sidebar_width: "normal", width: "full", density: "normal", tile_size: "normal", font: "normal", frame: "dark", reduce_motion: false };
 let cache = null, pending = null;
 const listeners = new Set();
 
@@ -39,7 +39,7 @@ export function useAdminSetup() {
 export function applyAdminLook(s) {
   const el = document.documentElement;
   const set = (k, v, dflt) => { if (v && v !== dflt) el.setAttribute(`data-adm-${k}`, v); else el.removeAttribute(`data-adm-${k}`); };
-  set("width", s.width, "full"); set("density", s.density, "normal"); set("tile", s.tile_size, "normal"); set("font", s.font, "normal"); set("sbw", s.sidebar_width, "normal");
+  set("width", s.width, "full"); set("density", s.density, "normal"); set("tile", s.tile_size, "normal"); set("font", s.font, "normal"); set("frame", s.frame, "dark"); set("sbw", s.sidebar_width, "normal");
   if (s.reduce_motion) el.setAttribute("data-adm-motion", "off"); else el.removeAttribute("data-adm-motion");
 }
-export function clearAdminLook() { ["width", "density", "tile", "font", "sbw", "motion"].forEach((k) => document.documentElement.removeAttribute(`data-adm-${k}`)); }
+export function clearAdminLook() { ["width", "density", "tile", "font", "sbw", "motion", "frame"].forEach((k) => document.documentElement.removeAttribute(`data-adm-${k}`)); }

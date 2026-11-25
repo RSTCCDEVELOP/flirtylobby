@@ -18,16 +18,17 @@ WIDTHS = ("full", "wide", "normal", "site")  # the width of the content of the a
 DENSITIES = ("compact", "normal", "roomy")
 TILE_SIZES = ("small", "normal", "large")
 FONTS = ("normal", "large")
+FRAMES = ("dark", "login", "light", "none")  # the colour of the sides left and right of the page (only with a limited width): darker, as the login screen, a light shade or the page colour
 SIDEBAR_WIDTHS = ("narrow", "normal", "wide")
 BLOCKS = ("ai", "presets", "backup", "about")  # the blocks under the tiles of the admin dashboard
 CHOICES = {"width": (WIDTHS, "Kies een breedte uit de lijst."), "density": (DENSITIES, "Kies een dichtheid uit de lijst."), "tile_size": (TILE_SIZES, "Kies een tegelgrootte uit de lijst."),
-           "font": (FONTS, "Kies een lettergrootte uit de lijst."), "sidebar_width": (SIDEBAR_WIDTHS, "Kies een breedte van de zijbalk uit de lijst.")}
+           "frame": (FRAMES, "Kies een kleur voor de zijkanten uit de lijst."), "font": (FONTS, "Kies een lettergrootte uit de lijst."), "sidebar_width": (SIDEBAR_WIDTHS, "Kies een breedte van de zijbalk uit de lijst.")}
 HREF_RE = re.compile(r"^/dashboard/[a-z0-9/_-]{1,80}$")
 DEFAULTS = {
     "view": "tiles", "page_size": "all", "hidden_tiles": [],  # tab Tegels
     "blocks": {k: True for k in BLOCKS},  # tab Dashboards
     "sidebar": "remember", "menu_search": True, "sidebar_width": "normal",  # tab Menu
-    "width": "full", "density": "normal", "tile_size": "normal", "font": "normal", "reduce_motion": False,  # tab Uiterlijk
+    "width": "full", "density": "normal", "tile_size": "normal", "font": "normal", "frame": "dark", "reduce_motion": False,  # tab Uiterlijk
 }
 
 
