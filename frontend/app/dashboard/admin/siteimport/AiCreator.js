@@ -654,6 +654,37 @@ function Carousel({ accent, children, tag, active = -1, chosen = "" }) {
 const tick = (ac) => <span aria-hidden="true" style={{ position: "absolute", top: 6, right: 6, width: 20, height: 20, borderRadius: "50%", background: ac, color: "#fff", display: "grid", placeItems: "center" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>;
 const cardStyle = (on, ac) => ({ flex: "0 0 100%", boxSizing: "border-box", scrollSnapAlign: "start", scrollSnapStop: "always", display: "grid", gap: ".4rem", textAlign: "left", padding: ".5rem", borderRadius: 12, cursor: "pointer", font: "inherit", color: "inherit", border: `2px solid ${on ? ac : "var(--line)"}`, background: on ? `color-mix(in srgb, ${ac} 10%, var(--card))` : "var(--card)", boxShadow: on ? `0 4px 14px color-mix(in srgb, ${ac} 28%, transparent)` : "none", position: "relative" });
 
+// The look of the opening (hero) of the website, as small drawings in a carousel: one is chosen. The order is the order of the options of the question (see HERO_OPTIONS in sitecreator.py).
+const HERO_KEYS = ["auto", "photo", "editorial", "visual", "classic", "bold"];
+function HeroArt({ kind, ac }) {
+  const soft = `color-mix(in srgb, ${ac} 24%, transparent)`, mid = `color-mix(in srgb, ${ac} 60%, transparent)`, ink = "var(--muted, #94a3b8)", dark = "#1f2937";
+  const bar = (x, y, w, h, f = ink, r = 2) => <rect x={x} y={y} width={w} height={h} rx={r} fill={f} />;
+  const btn = (x, y, f = ac) => <>{bar(x, y, 22, 8, f, 4)}{bar(x + 26, y, 22, 8, "none", 4)}<rect x={x + 26} y={y} width="22" height="8" rx="4" fill="none" stroke={f} strokeWidth="1.2" /></>;
+  const body = {
+    auto: <><rect x="2" y="2" width="156" height="96" rx="8" fill={soft} /><text x="80" y="64" textAnchor="middle" fontSize="46" fontWeight="700" fill={ac}>?</text></>,
+    photo: <><rect x="2" y="2" width="156" height="96" rx="8" fill={dark} /><rect x="2" y="2" width="156" height="96" rx="8" fill={mid} /><circle cx="128" cy="26" r="14" fill="rgba(255,255,255,.35)" />{bar(14, 30, 70, 9, "#fff")}{bar(14, 44, 54, 9, "#fff")}{bar(14, 60, 64, 4, "rgba(255,255,255,.7)")}{btn(14, 74, "#fff")}</>,
+    editorial: <><rect x="2" y="2" width="156" height="96" rx="8" fill="var(--card)" stroke="var(--line)" />{bar(12, 10, 28, 3)}{bar(120, 10, 28, 3)}{bar(12, 17, 136, 1.5, ink)}{bar(12, 22, 136, 14, dark, 2)}{bar(12, 40, 90, 14, dark, 2)}{bar(12, 58, 136, 1.5, ink)}{bar(12, 64, 64, 3)}{bar(12, 70, 64, 3)}{bar(12, 76, 50, 3)}{bar(84, 64, 64, 3)}{bar(84, 70, 64, 3)}{bar(84, 76, 50, 3)}</>,
+    visual: <><rect x="2" y="2" width="156" height="96" rx="8" fill="var(--card)" stroke="var(--line)" />{bar(12, 24, 54, 8, dark)}{bar(12, 36, 42, 8, dark)}{bar(12, 50, 52, 3)}{bar(12, 56, 48, 3)}{btn(12, 68)}<rect x="82" y="12" width="40" height="76" rx="5" fill={mid} /><rect x="126" y="12" width="26" height="36" rx="5" fill={soft} /><rect x="126" y="52" width="26" height="36" rx="5" fill={ac} opacity=".8" /></>,
+    classic: <><rect x="2" y="2" width="156" height="96" rx="8" fill="var(--card)" stroke="var(--line)" />{bar(12, 24, 56, 8, dark)}{bar(12, 36, 44, 8, dark)}{bar(12, 50, 54, 3)}{bar(12, 56, 50, 3)}{btn(12, 68)}<rect x="88" y="14" width="60" height="72" rx="6" fill={mid} /></>,
+    bold: <><rect x="2" y="2" width="156" height="96" rx="8" fill={dark} />{bar(36, 24, 88, 10, "#fff")}{bar(50, 38, 60, 10, "#fff")}{bar(48, 56, 64, 3, "rgba(255,255,255,.6)")}{bar(36, 70, 36, 9, ac, 4)}<rect x="80" y="70" width="36" height="9" rx="4" fill="none" stroke="#fff" strokeWidth="1.2" /></>,
+  };
+  return <svg viewBox="0 0 160 100" width="100%" height="110" aria-hidden="true" style={{ display: "block" }}>{body[kind]}</svg>;
+}
+function HeroCarousel({ q, value, onPick, disabled, accent }) {
+  const ac = accent || "var(--blue)";
+  const idx = (q.options || []).findIndex((o) => o === value);
+  return (
+    <Carousel accent={accent} tag="ui-hero-carousel" active={idx} chosen={idx >= 0 ? tx(q.options[idx]) : ""}>
+      {q.options.map((o, i) => { const on = i === idx; return (
+        <button key={o} type="button" disabled={disabled} aria-pressed={on} onClick={() => onPick(on ? "" : o)} title={tx(o)} style={cardStyle(on, ac)}>
+          {on && tick(ac)}
+          <span style={{ padding: 5, background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 8, display: "block" }}><HeroArt kind={HERO_KEYS[i]} ac={ac} /></span>
+          <strong style={{ fontSize: ".8rem", lineHeight: 1.2 }}>{tx(o)}</strong>
+        </button>); })}
+    </Carousel>
+  );
+}
+
 function LayoutCarousel({ value, onToggle, disabled, accent }) {
   const ac = accent || "var(--blue)";
   return (
@@ -1131,6 +1162,7 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
                   <span style={{ flex: 1, minWidth: 0 }}>{tx(l)}: <b>{ans[t === "page" ? "page_bg" : "front_bg"] || shown[t]}</b></span>
                   <small className="muted">{tx("Kiezen")}</small>
                 </button>))}</>
+          : q.id === "herostyle" && (q.options || []).length === HERO_KEYS.length ? <HeroCarousel q={q} value={ans[q.id]} disabled={disabled} accent={accent} onPick={(v) => set(q.id, v)} />
           : isLayout(q) ? <LayoutCarousel value={ans[q.id]} disabled={disabled} accent={accent} onToggle={(n) => set(q.id, ans[q.id].includes(n) ? ans[q.id].filter((x) => x !== n) : [...ans[q.id], n])} />
           : q.type === "text"
             ? <input value={ans[q.id]} maxLength={300} disabled={disabled || filling === q.id} onKeyDown={atEnter(q)} onChange={(e) => set(q.id, e.target.value)} placeholder={filling === q.id ? tx("De AI bedenkt gegevens…") : tx("Jouw antwoord (of laat leeg)")}
