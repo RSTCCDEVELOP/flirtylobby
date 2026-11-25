@@ -83,7 +83,10 @@ export default function SiteManager() {
   return (
     <>
       <h1>{tx("Site manager")}<PlusLock /></h1>
-      <p style={{ margin: "0 0 .6rem" }}><Link className="btn sm" href="/dashboard/superadmin/sites/bomen">{tx("Bomen planten: alle websites")}</Link></p>
+      <p style={{ margin: "0 0 .6rem", display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+        <Link className="btn sm" href="/dashboard/superadmin/sites/bomen">{tx("Bomen planten: alle websites")}</Link>
+        <Link className="btn sm" href="/dashboard/admin/admin-setup">{tx("easy2edit admin setup")}</Link>
+      </p>
       <p className="muted">{tx("Elke easy2edit-website meldt zich de eerste keer bij de easy2edit-server en daarna bij elke keer dat een beheerder, superadmin of superadmin+ inlogt. De server houdt de lijst bij.")}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
 
