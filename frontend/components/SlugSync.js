@@ -24,6 +24,7 @@ export default function SlugSync() {
       if (!alive || !map.current) return;
       const here = pathname.replace(/\/+$/, "") || "/";
       const hit = Object.values(map.current.pages || {}).find((p) => p.canonical === here || Object.values(p.urls || {}).includes(here));
+      if (["/404", "/geen-toegang"].includes(hit?.canonical) || ["/404", "/geen-toegang"].includes(here)) return; // error pages keep their address
       const want = hit?.urls?.[getLanguage()];
       if (want && want !== here) router.replace(`${want}${window.location.search}`);
     };

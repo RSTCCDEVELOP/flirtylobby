@@ -168,7 +168,7 @@ def aliases(request):
     out, pages = {}, {}
     if modules.enabled("pages"):
         for p in Page.objects.filter(scope="public", kind__in=("content", "system", "link", "menu")):
-            if not p.slugs or not service.available(p):
+            if not p.slugs or not service.available(p) or p.key in ("notfound", "forbidden"):  # the error pages answer with a 404/403: their address never changes with the language (that made the screen flicker)
                 continue
             urls = {l: p.path_in(l) for l in service.lang_codes()}
             pages[p.key] = {"canonical": p.path, "urls": urls}
