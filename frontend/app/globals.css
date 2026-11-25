@@ -5229,5 +5229,5 @@ html[data-pb-nohead]:not([data-pbbar="1"]) .site-credit.only-edit { display: fle
 
 /* 404 / 403: de kaart staat precies in het midden van de pagina (horizontaal en verticaal), tussen de header en de footer (of de hele pagina als die uit staan) */
 .site:has(> main > .notfound) { display: flex; flex-direction: column; min-height: 100vh; }
-.site:has(> main > .notfound) > main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; margin: 0; }
+.site:has(> main > .notfound) > main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: none; margin: 0 auto; }
 .site:has(> main > .notfound) > main > .notfound { margin: 2rem auto; }
