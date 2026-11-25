@@ -983,6 +983,23 @@ function RefSites({ jobId, disabled, onChange, onView, viewId }) {
   );
 }
 
+// The colour behind the site (the page background) is always a deep shade of the darkest accent colour of the theme: dark, but not almost black.
+function darkAccent(c) {
+  const ok = (v) => /^#[0-9a-f]{6}$/i.test(String(v || ""));
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  const lum = (h) => { const [r, g, b] = rgb(h).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const base = [c?.primary, c?.secondary].filter(ok).sort((a, b) => lum(a) - lum(b))[0];
+  if (!base) return ok(c?.dark_bg) ? c.dark_bg : "";
+  const [r, g, b] = rgb(base);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  let h = 0, sat = 0, l = (mx + mn) / 2;
+  if (mx !== mn) { const d = mx - mn; sat = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h /= 6; }
+  sat = sat < 0.08 ? sat : Math.min(Math.max(sat, 0.25), 0.7); l = l > 0.24 ? 0.2 : Math.max(l, 0.16);  // (a grey stays grey)
+  const q = l < 0.5 ? l * (1 + sat) : l + sat - l * sat, p2 = 2 * l - q;
+  const f = (t) => { t = (t + 1) % 1; return t < 1 / 6 ? p2 + (q - p2) * 6 * t : t < 1 / 2 ? q : t < 2 / 3 ? p2 + (q - p2) * (2 / 3 - t) * 6 : p2; };
+  return "#" + [f(h + 1 / 3), f(h), f(h - 1 / 3)].map((v) => Math.round(v * 255).toString(16).padStart(2, "0")).join("");
+}
+
 function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob, onChanged, queryHint, firstRound, saved, onSave, picked, colors, mode, onRefView, refViewId }) {
   // the first questionnaire always has a question for the logo and one for photos and videos (own files and iStock), also when the AI did not think of them: two separate drop zones
   const given = [...first];
@@ -1079,8 +1096,10 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
     const c = chosenTheme?.colors || {};
     const light = [[c.light_bg, "Licht"], [c.light_card, "Kaart (licht)"]], dark = [[c.dark_bg, "Donker"], [c.dark_card, "Kaart (donker)"], [c.dark_text, "Tekst (licht)"]];
     const brand = [[c.primary, "hoofdkleur"], [c.secondary, "tweede kleur"]];
-    const wantDark = target === "page" ? !modeDark : modeDark;
-    return (wantDark ? [...dark, ...light, ...brand] : [...light, ...dark, ...brand]).filter(([v]) => /^#[0-9a-f]{3,8}$/i.test(String(v || "")));
+    const wantDark = target === "page" ? true : modeDark;  // the colour behind the site is always a dark one
+    const list = wantDark ? [...dark, ...light, ...brand] : [...light, ...dark, ...brand];
+    if (target === "page") list.unshift([darkAccent(c), "Donkerste accentkleur"]);  // first: the deep shade of the darkest accent colour (also the default)
+    return list.filter(([v]) => /^#[0-9a-f]{3,8}$/i.test(String(v || "")));
   };
   const bgDone = useRef(new Set());  // themes whose default colours were already put on the design
   useEffect(() => {  // a theme is chosen (its colours are on the design now): the default background and frontend colour of that theme are put on the design
