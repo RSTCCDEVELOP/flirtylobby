@@ -119,3 +119,27 @@ def test_the_pictures_in_a_pdf_go_to_the_designer_too(django_user_model, monkeyp
     sc.remove_upload(job, up[0]["id"])
     job.refresh_from_db()
     assert not job.brief["uploads"]
+
+
+@pytest.mark.django_db
+def test_the_planner_knows_the_widgets_and_installs_the_ones_it_uses(django_user_model, monkeypatch):
+    from apps.core.models import SiteDesignJob
+    from apps.sysobjects import widgets
+
+    u = django_user_model.objects.create_user("wd", "wd@x.nl", "pw12345678!", is_staff=True)
+    job = SiteDesignJob.objects.create(user=u, name="Bakkerij", status="done", brief={"name": "Bakkerij", "kind": "shop", "component_set": ""})
+    slugs = {o["slug"]: o for o in sc.auto_objects(job.brief)}
+    assert "widget-opening-hours" in slugs and slugs["widget-opening-hours"].get("installed") is False  # a library widget that is not installed yet is offered
+    assert not {"widget-popup", "widget-floating-button", "widget-discount-code"} & set(slugs)  # parts that are no sections of a page
+    seen = {}
+
+    def fake(system, prompt, max_tokens=0, pk=None, images=None):
+        seen["prompt"] = prompt
+        return '{"pages": [{"file": "index.html", "title": "Home", "description": "x", "sections": [{"tag": "ui-hero-split", "id": "hero", "goal": "intro"}, {"sysobject": "widget-opening-hours", "id": "open", "goal": "when we are open"}, {"tag": "ui-cta", "id": "contact", "goal": "contact"}]}], "brand": "Bakkerij"}'
+
+    monkeypatch.setattr(sc, "_ask", fake)
+    assert "widget-opening-hours" not in widgets.installed()
+    plan = sc._site_plan(job.pk, job, [("index.html", "Home")])
+    assert "WIDGETS" in seen["prompt"] and "widget-opening-hours" in seen["prompt"] and "widget-countdown" in seen["prompt"]
+    assert any(x.get("sysobject") == "widget-opening-hours" for x in plan["pages"][0]["sections"])
+    assert "opening-hours" in widgets.installed()  # installed by the system because the planner used it

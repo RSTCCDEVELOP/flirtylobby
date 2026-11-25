@@ -149,13 +149,13 @@ def test_widgets_in_the_creator_questionnaire_and_prompt(lib, django_user_model)
     objs = {o["slug"]: o for o in sitecreator.catalog()["objects"]}
     assert objs["widget-hello"]["installed"] is False and objs["widget-hello"]["kind"] == "widget"  # the questionnaire shows the whole library
     assert objs["widget-hello"]["category"] == "Test" and objs["widget-hello"]["description"] == "Zegt hallo"  # grouped by category in the questionnaire, with its description
-    assert "widget-hello" not in {o["slug"] for o in sitecreator.auto_objects({"objects": ["widget-hello"]})}  # not active: not in the prompt
+    assert "widget-hello" in {o["slug"] for o in sitecreator.auto_objects({"objects": ["widget-hello"]})}  # not active yet: the planner is offered the library too (it is installed when the planner uses it)
     assert sitecreator.clean_brief({"objects": ["widget-hello", "widget-onbekend"]}, {})["objects"] == ["widget-hello"]  # a library widget can be chosen before it is installed
     sitecreator._install_chosen_widgets({"objects": ["widget-hello"]})  # chosen: installed when the design is made
     assert {o["slug"]: o for o in sitecreator.catalog()["objects"]}["widget-hello"]["category"] == "Test"  # an active widget too
     assert InstalledWidget.objects.get(key="hello").enabled
     assert "widget-hello" in {o["slug"] for o in sitecreator.auto_objects({"objects": ["widget-hello"]})}
-    assert "widget-hello" not in {o["slug"] for o in sitecreator.auto_objects({})}  # like a system object: only when the customer chose it
+    assert "widget-hello" in {o["slug"] for o in sitecreator.auto_objects({})}  # the widgets of the library are offered to the planner, without the customer choosing them (not the popup, the floating button and the discount code)
     widgets.uninstall("hello")
     doc = {"formaat": "easy2edit-pagina@1", "pagina": {"titel": "T", "slug": "t"}, "inhoud": [{"id": "w1", "type": "sysobject", "props": {"slug": "widget-hello"}, "children": []}]}
     rep, _ = pagevalidate.validate(doc, pagevalidate.site_context({"sysobjecten": {"x"}}))

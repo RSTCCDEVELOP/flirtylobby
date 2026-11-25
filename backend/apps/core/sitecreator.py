@@ -1751,6 +1751,26 @@ def remove_ref(job, url):
     return refs_public(job)
 
 
+def _install_planned_widgets(out_pages):
+    """The widgets that the planner placed are installed (active) now, so the system object exists when the page is built. Never raises."""
+    keys = []
+    for pg in out_pages:
+        for x in pg.get("sections") or []:
+            for so in [x.get("sysobject")] + [c.get("sysobject") for c in x.get("cells") or []]:
+                if str(so or "").startswith("widget-"):
+                    keys.append(str(so)[7:])
+    if not keys:
+        return
+    from apps.sysobjects import widgets as _wg
+
+    for k in dict.fromkeys(keys):
+        try:
+            if k not in _wg.installed():
+                _wg.install(k)
+        except Exception:  # noqa: BLE001
+            logger.warning("sitecreator: widget %s could not be installed", k)
+
+
 def _site_plan(pk, job, pages):
     """A SMALL plan: for every page the components (sections) in order, chosen from the whole set. Never fails: a standard plan is the fallback."""
     from . import componentpacks
@@ -1767,7 +1787,7 @@ def _site_plan(pk, job, pages):
     objs = ", ".join(b.get("objects") or [])
     avail = auto_objects(b)
     known = {o["slug"] for o in avail}
-    obj_list = "\n".join(f"- {o['slug']}: {o['name']} ({o['kind_label']})" for o in avail)
+    obj_list = "\n".join(f"- {o['slug']}: {o['name']} ({o['kind_label']})" + (f" - {str(o.get('description') or '')[:110]}" if o.get("kind") == "widget" and o.get("description") else "") for o in avail)
     prompt = (f"{_brief_text(b)}\n\nPlan the pages. The pages (file = title): " + "; ".join(f"{f} = {t}" for f, t in pages) + ".\n"
               + ("This is a ONE PAGER: there is only ONE page, so give 7 to 10 sections for it that together make the complete website (hero, about, services/offer, benefits, showcase or gallery, reviews, contact ... as fits the business; only the functions that the customer chose, see FUNCTIONS above). Give a short \"menu\" label (max 20 characters, in the language of the website) ONLY to the sections that the customer asked for: about us, services, contact, and showcase/portfolio, FAQ, blog or documents ONLY when the customer chose them. Sections such as reviews, results or how it works get NO menu label (leave it empty): a menu has at most 5 items. Every section gets a unique lowercase \"id\" (about, services, ...). "
                  if len(pages) == 1 else "For EVERY page give 4 to 8 sections, each ONE component, in the order of the page.")
@@ -1782,6 +1802,7 @@ def _site_plan(pk, job, pages):
               + (f"System objects that must be placed as a section: {objs} (use {{\"sysobject\": \"slug\"}} for them). " if objs else "")
               + (f"SYSTEM OBJECTS (live parts of easy2edit that work by themselves; a section is {{\"sysobject\": \"slug\", \"id\": \"x\", \"title\": \"heading above it\"}}):\n{obj_list}\n"
                  "USE THEM: photos together (a gallery, slider, carousel, a row or collage of pictures) are ALWAYS a media object, never a ui-gallery or a row of images: choose the style that fits the content (carousel, slideshow, coverflow, mosaic, wall, filmstrip, album ...) and use a different style where there are several. "
+                 "WIDGETS (slugs widget-...): small live parts such as an opening-hours block, a countdown, a clock, a marquee, a pricing table, steps, a timeline, a testimonials slider, a stats counter, a route card or a before/after picture. Use one or two where they really serve THIS website (opening hours or a route card for a shop or restaurant, a countdown for an event or a launch, a stats counter or a timeline for a company that wants to show growth, testimonials for a service); never as filler and never more than three. A widget that is not installed yet is installed by the system when you use it. "
                  "Events or an agenda, a product overview, documents or a showcase are the object of that module when it is in the list. Use at least one fitting system object on a page when the list has one that fits; never invent a slug, use only the slugs above. " if obj_list else "")
               + 'Answer: {"pages": [{"file": "index.html", "title": "page title (max 60 chars)", "description": "meta description (max 155 chars)", "sections": [{"tag": "ui-...", "id": "x", "menu": "", "goal": "what this section says, in one sentence"}]}], "brand": "short brand name for the menu"}\n'
               f"The FIRST section of the start page is the opening: one of these heroes, chosen for this website: {', '.join(heroes)}. Do not use ui-hero-split unless it is in that list. "
@@ -1852,9 +1873,11 @@ def _site_plan(pk, job, pages):
                 i += "-2"
             seen.add(i)
             x["id"] = i
+    _install_planned_widgets(out_pages)
     return {"brand": str(plan.get("brand") or (b.get("name") or "Website"))[:40], "pages": out_pages}
 
 
+AUTO_WIDGET_SKIP = {"widget-popup", "widget-floating-button", "widget-discount-code"}  # a popup, a floating button and a discount code are not sections of a page: only when the customer chose them
 AUTO_OBJECT_SKIP = re.compile(r"cart|checkout|upload|product$")  # parts that need a customer action or one chosen item: only placed when the customer chose them
 
 
@@ -1871,10 +1894,13 @@ def auto_objects(b):
     out = []
     for o in cat:
         slug_ = o["slug"]
-        if o.get("installed") is False:  # a widget of the library that is not active: not in the prompt
+        if o.get("installed") is False and not (o["kind"] == "widget" and slug_ not in AUTO_WIDGET_SKIP):  # a widget of the library that is not active is offered to the planner too: it is installed when the planner uses it
             continue
         if slug_ in chosen or o["kind"] == "media":
             out.append(o)
+        elif o["kind"] == "widget":
+            if slug_ not in AUTO_WIDGET_SKIP:
+                out.append(o)
         elif o["kind"] == "plugin_part":
             plug = slug_.split("-")[1] if slug_.count("-") >= 2 else ""
             if plug and any(k == plug or k.startswith(plug) or plug.startswith(k) for k in active) and not AUTO_OBJECT_SKIP.search(slug_):
