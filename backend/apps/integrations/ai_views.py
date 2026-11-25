@@ -618,6 +618,24 @@ def _payer(user, body):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+def topup_temporary(request):
+    """Superadmin (and higher): take the asked amount as credit without paying. The credit is there at once and goes back to 0 when the person logs out. {amount}"""
+    u = request.user
+    if not (u.is_staff or u.is_superuser):
+        return Response({"detail": "Alleen een superadmin kan tijdelijk tegoed nemen."}, status=status.HTTP_403_FORBIDDEN)
+    st = AiSettings.load()
+    try:
+        amount = Decimal(str((request.data or {}).get("amount"))).quantize(Decimal("0.01"))
+    except Exception:  # noqa: BLE001
+        amount = Decimal(0)
+    if amount <= 0 or amount > st.topup_max:
+        return Response({"detail": "Kies een bedrag binnen het maximum."}, status=status.HTTP_400_BAD_REQUEST)
+    bal = aiusage.temp_credit(u, amount, by=u.email)
+    return Response({"ok": True, "balance": F(bal), "temporary": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def topup(request):
     """Buy AI credit: a payment is started; the credit is added when it is paid. Returns where to pay. {amount, payer?: "private"|"company", entity?}: who pays (the credit is always for the person)."""
     from apps import commerce

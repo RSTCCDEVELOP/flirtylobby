@@ -166,6 +166,29 @@ def credit(user, amount, kind, note="", ref="", by=""):
     return acc.balance
 
 
+def temp_credit(user, amount, by=""):
+    """A superadmin takes AI credit without paying: the amount is put on the credit now and is taken off again at logout (release_temp). Returns the new balance."""
+    from .models import AiAccount
+
+    new = credit(user, amount, "temp", "Tijdelijk tegoed (zonder betaling, vervalt bij uitloggen)", by=by or getattr(user, "email", ""))
+    AiAccount.objects.filter(user=user).update(temp_balance=Decimal(str(amount)) + (AiAccount.objects.filter(user=user).values_list("temp_balance", flat=True).first() or 0))
+    return new
+
+
+def release_temp(user):
+    """At logout: the temporary credit (what is left of it) goes back to 0. Credit that was really bought stays. Returns what was taken off."""
+    from .models import AiAccount
+
+    acc = AiAccount.objects.filter(user=user).first()
+    if not acc or acc.temp_balance <= 0:
+        return Decimal(0)
+    take = min(acc.temp_balance, max(acc.balance, Decimal(0)))
+    if take > 0:
+        credit(user, -take, "temp", "Tijdelijk tegoed vervallen (uitgelogd)", by=getattr(user, "email", ""))
+    AiAccount.objects.filter(pk=acc.pk).update(temp_balance=0)
+    return take
+
+
 def pay_link(user=None):
     """How AI credit is paid: always through an easy2edit link of the superadmin, never the Stripe of the website's own shop. Returns {"key", "name", "via"} (via: "link" = a Stripe link that
     is marked as a superadmin link, "license" = the Stripe account of the licence) or None."""

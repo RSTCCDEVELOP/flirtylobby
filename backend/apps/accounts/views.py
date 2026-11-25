@@ -327,6 +327,10 @@ def twofa_disable(request):
 @api_view(["POST"])
 def logout(request):
     __import__("apps.auditlog.service", fromlist=["log"]).log("auth.logout", request.user, request=request)
+    try:  # AI credit that a superadmin took without paying goes back to 0
+        __import__("apps.integrations.aiusage", fromlist=["release_temp"]).release_temp(request.user)
+    except Exception:  # noqa: BLE001
+        logger.exception("Temporary AI credit could not be released at logout")
     Token.objects.filter(user=request.user).delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 

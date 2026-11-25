@@ -24,6 +24,7 @@ urlpatterns = [
     path("ai/me/", ai_views.me),
     path("ai/me/welcome/", ai_views.welcome_done),
     path("ai/me/topup/", ai_views.topup),
+    path("ai/me/topup/temporary/", ai_views.topup_temporary),
     path("ai/me/topup/confirm/", ai_views.topup_confirm),
     path("admin/ai/credit/", ai_views.credit),
     path("ai/tenant/", ai_views.tenant_view),

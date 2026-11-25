@@ -32,6 +32,11 @@ export default function AiCreditPopup({ info, onClose, amount: preset, beforePay
     try { if (beforePay) await beforePay(); const r = await api("/ai/me/topup/", { method: "POST", body: { amount, ...(onAccount ? { pay: "account" } : {}), ...(companies.length ? (who === "private" ? { payer: "private" } : { payer: "company", entity: Number(who) }) : {}) } }); window.location.href = r.url; }
     catch (e) { setErr(errorText(e)); setBusy(false); }
   };
+  const temp = async () => {  // superadmin: use the AI now without paying; the credit is taken off again at logout
+    setBusy(true); setErr("");
+    try { await api("/ai/me/topup/temporary/", { method: "POST", body: { amount } }); window.dispatchEvent(new Event("ai-credit-changed")); onClose(true); }
+    catch (e) { setErr(errorText(e)); setBusy(false); }
+  };
   const body = (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="card modal form" role="dialog" aria-label={tx("AI-tegoed kopen")} style={{ maxWidth: 480 }} onMouseDown={(e) => e.stopPropagation()}>
@@ -71,6 +76,7 @@ export default function AiCreditPopup({ info, onClose, amount: preset, beforePay
         {!info.can_pay && !mayAccount && <div className="alert">{tx("Betalen is nu niet mogelijk: de Stripe-koppeling van het systeem staat niet aan.")}</div>}
         {err && <div className="alert">{err}</div>}
         <div className="row" style={{ justifyContent: "flex-end" }}>
+          {info.is_staff && <button type="button" className="btn" disabled={busy} onClick={temp} title={tx("Het bedrag komt nu als tegoed beschikbaar zonder te betalen en gaat bij uitloggen terug naar 0.")}>{tx("Tijdelijk tegoed (zonder betalen)")}</button>}
           <button type="button" className="btn" onClick={onClose}>{tx("Later")}</button>
           <button type="button" className="btn primary" disabled={busy || (!info.can_pay && !onAccount) || (onAccount && room !== null && amount > room)} onClick={pay}>{busy ? tx("Bezig…") : `${onAccount ? tx("Op rekening bestellen") : tx("Betalen")} ${money(amount, info.currency)}`}</button>
         </div>

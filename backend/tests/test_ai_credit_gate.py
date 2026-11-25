@@ -149,3 +149,24 @@ def test_superadmin_may_bypass_the_credit_when_the_option_is_on(django_user_mode
         aiusage.gate("claude-sonnet-5-5", ("hallo",), 100)  # option on: passes without credit
     finally:
         aiusage._actor.reset(token)
+
+
+@pytest.mark.django_db
+def test_superadmin_temporary_credit_is_gone_after_logout(django_user_model):
+    from rest_framework.test import APIClient
+
+    sa = django_user_model.objects.create_user("sa2", "sa2@x.nl", "pw12345678!", is_staff=True)
+    plain = django_user_model.objects.create_user("pl", "pl@x.nl", "pw12345678!")
+    AiSettings.load()
+    c = APIClient()
+    c.force_authenticate(plain)
+    assert c.post("/api/ai/me/topup/temporary/", {"amount": 5}, format="json").status_code == 403
+    c.force_authenticate(sa)
+    aiusage.credit(sa, 10, "adjust", "gekocht")  # real credit stays
+    r = c.post("/api/ai/me/topup/temporary/", {"amount": 5}, format="json")
+    assert r.status_code == 200 and AiAccount.objects.get(user=sa).balance == 15
+    AiAccount.objects.filter(user=sa).update(balance=12)  # 3 used
+    assert aiusage.release_temp(sa) == 5
+    acc = AiAccount.objects.get(user=sa)
+    assert acc.balance == 7 and acc.temp_balance == 0
+    assert aiusage.release_temp(sa) == 0

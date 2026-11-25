@@ -106,13 +106,14 @@ class AiAccount(models.Model):
     user = models.OneToOneField("accounts.User", on_delete=models.CASCADE, related_name="ai_account")
     balance = models.DecimalField(max_digits=12, decimal_places=4, default=0)
     welcomed = models.BooleanField(default=False)  # the explanation of the AI credit was shown (first login as admin)
+    temp_balance = models.DecimalField(max_digits=12, decimal_places=4, default=0)  # the part of the balance that a superadmin took without paying: it goes back to 0 at logout
     updated_at = models.DateTimeField(auto_now=True)
 
 
 class AiLedger(models.Model):
     """Every change of a credit: bought (topup), used (usage), put in or taken out by the superadmin (adjust)."""
 
-    KINDS = [("topup", "Gekocht"), ("usage", "Gebruikt"), ("adjust", "Aangepast door de superadmin")]
+    KINDS = [("topup", "Gekocht"), ("usage", "Gebruikt"), ("adjust", "Aangepast door de superadmin"), ("temp", "Tijdelijk tegoed")]
     user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="+")
     kind = models.CharField(max_length=8, choices=KINDS)
     amount = models.DecimalField(max_digits=12, decimal_places=4)  # + put in, - used
