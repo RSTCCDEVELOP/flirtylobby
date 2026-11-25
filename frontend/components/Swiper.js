@@ -145,9 +145,9 @@ export default function Swiper() {
       {top ? (
         <>
           <div className="swipe-stack">
-            {[2, 1].map((i) => cards[i] && <div key={cards[i].id} className="swipe-card back" aria-hidden="true" style={backStyle(i)}>{cards[i].photos[0] && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(cards[i].photos[0])} alt="" />}</div>)}
+            {[2, 1].map((i) => cards[i] && <div key={cards[i].id} className="swipe-card back" aria-hidden="true" style={backStyle(i)}>{cards[i].photos[0] && /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={mediaUrl(cards[i].photos[0])} alt="" />}</div>)}
             <div className="swipe-card" data-g={top.gender || undefined} style={style} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => { start.current = null; setDrag(null); }}>
-              {top.photos.length ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(top.photos[photo] || top.photos[0])} alt={top.name} draggable={false} /> : <span className="swipe-nophoto muted">{tx("Geen foto")}</span>}
+              {top.photos.length ? /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={mediaUrl(top.photos[photo] || top.photos[0])} alt={top.name} draggable={false} /> : <span className="swipe-nophoto muted">{tx("Geen foto")}</span>}
               {top.photos.length > 1 && <span className="swipe-dots">{top.photos.map((_, i) => <i key={i} className={i === photo ? "on" : ""} />)}</span>}
               <span className="swipe-tint" style={{ background: tint }} />
               <span className="swipe-stamp like" style={{ opacity: likeOp }}>{tx("LEUK")}</span>
@@ -202,7 +202,7 @@ export default function Swiper() {
             <IconHeart width={44} height={44} fill="currentColor" style={{ color: "var(--blue)" }} />
             <h2 style={{ margin: 0 }}>{tx("Het is een match!")}</h2>
             <p className="muted" style={{ margin: 0 }}>{tx("Jij en {0} vinden elkaar leuk. Zeg hoi!", match.name)}</p>
-            {match.photos[0] && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(match.photos[0])} alt={match.name} className="swipe-match-img" />}
+            {match.photos[0] && /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={mediaUrl(match.photos[0])} alt={match.name} className="swipe-match-img" />}
             <div className="row" style={{ justifyContent: "center" }}>
               {match.accept_chat && chat?.cfg && <button className="btn primary" onClick={() => { chat.openPartner({ id: match.id, name: match.name }); chat.setWidgetOpen(true); setMatch(null); }}>{tx("Chat starten")}</button>}
               {match.accept_messages && <Link className="btn" href="/dashboard/community/messages" onClick={() => setMatch(null)}>{tx("Bericht sturen")}</Link>}

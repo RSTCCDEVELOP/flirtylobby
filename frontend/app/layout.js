@@ -8,12 +8,12 @@
 import StickyHeader from "../components/StickyHeader";
 import DemoNotice from "../components/DemoNotice";
 import AiCreditAsk from "../components/AiCreditAsk";
-import { SpeedTestHost } from "../components/SpeedTest";
 import SiteBack from "../components/SiteBack";
 import SiteCredit from "../components/SiteCredit";
 import "./globals.css";
 import { BrandingProvider } from "../components/BrandingContext";
 import Gates from "../components/Gates";
+import { EditTools, LazyLicensePrompt as LicensePrompt, LazyDevicePreview as DevicePreview, LazySpeedTestHost as SpeedTestHost } from "../components/LazyTools";
 import { ContentProvider, EditBanner } from "../components/EditMode";
 import { SessionProvider } from "../components/Session";
 import PrefsSync from "../components/PrefsSync";
@@ -30,22 +30,17 @@ import { MenuProvider } from "../components/SiteMenu";
 import { getBackgrounds, getEnergyBadge, getMenu } from "../lib/pages-server";
 import PageBackdrop from "../components/PageBackdrop";
 import UndoButton from "../components/UndoButton";
-import AiImprove from "../components/AiImprove";
-import SavePresetButton from "../components/SavePresetButton";
-import EditHelp from "../components/EditHelp";
 import PageSettingsButton from "../components/PageSettingsButton";
 import { DirectHostProvider } from "../components/DirectHost";
 import LangRoot from "../components/LangRoot";
 import VersionNotice from "../components/VersionNotice";
 import { getSite } from "../lib/site-server";
 import SiteCurrency from "../components/SiteCurrency";
-import DevicePreview from "../components/DevicePreview";
 import NavProgress from "../components/NavProgress";
 import DonateThanks from "../components/DonateThanks";
 import MaintenanceGate from "../components/MaintenanceGate";
 import MouseEffects from "../components/MouseEffects";
 import LicenseNotice from "../components/LicenseNotice";
-import LicensePrompt from "../components/LicensePrompt";
 import { getBuildId } from "../lib/version-server";
 import AdminBar from "../components/AdminBar";
 import DeviceGate from "../components/DeviceGate";
@@ -186,10 +181,8 @@ export default async function RootLayout({ children }) {
               <SiteCredit show={site?.show_credit !== false} url={site?.easy2edit?.site_url} badge={energyBadge} />
               <EditBanner />
               <PageSettingsButton />
-              <EditHelp />
-              <AiImprove />
+              <EditTools />
               <UndoButton />
-              <SavePresetButton />
               </DirectHostProvider>
             </ContentProvider>
             <Gates cfg={security} />

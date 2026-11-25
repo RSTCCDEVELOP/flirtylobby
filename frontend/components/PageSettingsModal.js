@@ -316,7 +316,7 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
                 <div>
                   <strong style={{ fontSize: ".85rem" }}>{tx("Afbeelding bij delen (social media)")}</strong>
                   <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", marginTop: ".4rem" }}>
-                    {cur.og_image && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(cur.og_image)} alt="" style={{ height: 64, borderRadius: 8 }} />}
+                    {cur.og_image && /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={mediaUrl(cur.og_image)} alt="" style={{ height: 64, borderRadius: 8 }} />}
                     <button type="button" className="btn" onClick={() => setPicker("og")}>{tx("Media")}</button>
                     {cur.og_media && <button type="button" className="btn danger" onClick={() => setCur({ og_media: null, og_image: null })}>{tx("Verwijderen")}</button>}
                   </div>
@@ -348,7 +348,7 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
                 <>
                   <div className="pgs-bgprev">
                     {bg.url
-                      ? (bg.type === "video" ? <video src={mediaUrl(bg.url)} autoPlay muted loop playsInline /> : /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(bg.url)} alt="" />)
+                      ? (bg.type === "video" ? <video src={mediaUrl(bg.url)} autoPlay muted loop playsInline /> : /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={mediaUrl(bg.url)} alt="" />)
                       : <div className="muted" style={{ display: "grid", placeItems: "center", height: "100%", color: "#fff" }}>{tx("Nog niets gekozen")}</div>}
                     <div className="page-bg-shade" style={{ opacity: bg.overlay }} />
                   </div>

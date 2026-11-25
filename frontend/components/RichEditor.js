@@ -98,7 +98,7 @@ function RichEditorInner({ initialHtml, title = tx("Tekst bewerken"), onSave, on
     setPicker(false);
     area.current.focus();
     restoreSel();
-    document.execCommand("insertHTML", false, `<img src="${mediaUrl(item.url)}" alt="${escapeHtml(item.name)}" data-media="${item.id}" style="max-width:100%">`);
+    document.execCommand("insertHTML", false, `<img loading="lazy" decoding="async" src="${mediaUrl(item.url)}" alt="${escapeHtml(item.name)}" data-media="${item.id}" style="max-width:100%">`);
   }
 
   async function save(plain) {

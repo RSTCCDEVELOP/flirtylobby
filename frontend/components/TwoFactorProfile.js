@@ -119,7 +119,7 @@ export default function TwoFactorProfile() {
           <p className="muted" style={{ margin: 0 }}>{tx("Scan de QR-code met je authenticator-app (Google Authenticator, Microsoft Authenticator, Authy…) of kopieer de sleutel naar je wachtwoordmanager.")}</p>
           <div className="totp-box">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="qr" src={app.qr} alt={tx("QR-code voor je authenticator-app")} />
+            <img loading="lazy" decoding="async" className="qr" src={app.qr} alt={tx("QR-code voor je authenticator-app")} />
             <div className="totp-key">
               <small className="muted">{tx("Sleutel")}</small>
               <code>{app.secret.replace(/(.{4})/g, "$1 ").trim()}</code>

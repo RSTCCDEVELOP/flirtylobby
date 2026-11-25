@@ -87,13 +87,13 @@ function Detail({ t, can, manage, onBack, onInstalled }) {  // eslint-disable-li
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1.3rem", alignItems: "start" }}>
         <div style={{ display: "grid", gap: ".6rem", minWidth: 0, position: "sticky", top: 0 }}>
           <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: tint(18), height: "clamp(200px, 44vh, 400px)", boxShadow: "0 8px 26px rgba(0,0,0,.15)" }}>
-            {t.previews > 0 && <img src={img(t, n)} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />}
+            {t.previews > 0 && <img loading="lazy" decoding="async" src={img(t, n)} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />}
             {t.previews > 1 && <>
               <button type="button" className="btn sm" aria-label={tx("Vorige")} disabled={n === 0} onClick={() => setN(n - 1)} style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)" }}>‹</button>
               <button type="button" className="btn sm" aria-label={tx("Volgende")} disabled={n >= t.previews - 1} onClick={() => setN(n + 1)} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)" }}>›</button>
             </>}
           </div>
-          {t.previews > 1 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>{Array.from({ length: t.previews }, (_, i) => <button type="button" key={i} onClick={() => setN(i)} aria-label={`${tx("Voorbeeld")} ${i + 1}`} style={{ width: 74, aspectRatio: "16 / 10", padding: 0, borderRadius: 8, overflow: "hidden", cursor: "pointer", border: `2px solid ${n === i ? "var(--eco-green, #2f7d5b)" : "transparent"}`, opacity: n === i ? 1 : .7 }}><img src={img(t, i)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} /></button>)}</div>}
+          {t.previews > 1 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>{Array.from({ length: t.previews }, (_, i) => <button type="button" key={i} onClick={() => setN(i)} aria-label={`${tx("Voorbeeld")} ${i + 1}`} style={{ width: 74, aspectRatio: "16 / 10", padding: 0, borderRadius: 8, overflow: "hidden", cursor: "pointer", border: `2px solid ${n === i ? "var(--eco-green, #2f7d5b)" : "transparent"}`, opacity: n === i ? 1 : .7 }}><img loading="lazy" decoding="async" src={img(t, i)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} /></button>)}</div>}
         </div>
         <div style={{ display: "grid", gap: ".7rem", minWidth: 0 }}>
           <div style={{ display: "grid", gap: ".25rem" }}><strong style={{ fontSize: "1.35rem", lineHeight: 1.2 }}>{t.name}</strong><small className="muted">v{t.version}{t.author ? ` · ${t.author}` : ""}{t.size ? ` · ${(t.size / 1048576).toFixed(1)} MB` : ""}{t.previews ? ` · ${t.previews} ${tx("voorbeelden")}` : ""}</small></div>

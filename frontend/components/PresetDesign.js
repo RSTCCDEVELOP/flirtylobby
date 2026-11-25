@@ -140,7 +140,7 @@ export default function PresetDesign({ preset }) {
       <div className="overlay" onClick={() => setBig(null)}>
         <div className="card modal pdz-big" onClick={(e) => e.stopPropagation()}>
           <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}><strong>{big.title}</strong><button type="button" className="btn sm" onClick={() => setBig(null)}>{tx("Sluiten")}</button></div>
-          <div className="pdz-bigimg"><img src={`${sampleUrl(preset, big.key)}?v=${stamp}`} alt={big.title} /></div>
+          <div className="pdz-bigimg"><img loading="lazy" decoding="async" src={`${sampleUrl(preset, big.key)}?v=${stamp}`} alt={big.title} /></div>
         </div>
       </div>
     )}

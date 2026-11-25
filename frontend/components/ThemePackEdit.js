@@ -245,7 +245,7 @@ export default function ThemePackEdit({ pack, onClose: closeNow, onChanged: chan
                 <div key={slot} className="card row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: "1rem" }}>
                   <span className="row" style={{ flexWrap: "nowrap", gap: "1rem", minWidth: 0 }}>
                     <span style={{ width: 96, height: 64, display: "grid", placeItems: "center", background: "var(--bg)", borderRadius: 8, flex: "none" }}>
-                      {f ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={f.url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} /> : <small className="muted">{tx("Geen")}</small>}
+                      {f ? /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={f.url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} /> : <small className="muted">{tx("Geen")}</small>}
                     </span>
                     <span style={{ minWidth: 0 }}><strong>{tx(label)}</strong><br /><small className="muted">{tx(hint)}</small></span>
                   </span>
@@ -266,7 +266,7 @@ export default function ThemePackEdit({ pack, onClose: closeNow, onChanged: chan
               {(files?.home || []).map((h, i) => (
                 <div className="photo-item" key={h.file}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={h.url} alt="" />
+                  <img loading="lazy" decoding="async" src={h.url} alt="" />
                   <input value={h.caption} placeholder={tx("Bijschrift")} onChange={(e) => setCaption(i, e.target.value)} onBlur={saveMeta} maxLength={255} />
                   <button type="button" className="btn sm danger" disabled={busy} onClick={() => run(() => api(`${base}/home/${i}/`, { method: "DELETE" }))}>{tx("Verwijder")}</button>
                 </div>

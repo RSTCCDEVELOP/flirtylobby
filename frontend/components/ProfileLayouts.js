@@ -41,12 +41,12 @@ export function Gallery({ p, i, setI, ratio = "4 / 3", rounded = true }) {
     <div className="gallery">
       <div className="photo-lock">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="main" src={mediaUrl(cur.url)} alt={p.name} style={{ aspectRatio: ratio, borderRadius: rounded ? undefined : 0 }} />
+        <img loading="lazy" decoding="async" className="main" src={mediaUrl(cur.url)} alt={p.name} style={{ aspectRatio: ratio, borderRadius: rounded ? undefined : 0 }} />
         {cur.blurred && <span className="lock-badge"><IconLock /> {tx("Wazig · vraag toegang")}</span>}
       </div>
       {p.photos.length > 1 && (
         <div className="thumbs">
-          {p.photos.map((ph, k) => /* eslint-disable-next-line @next/next/no-img-element */ <img key={k} src={mediaUrl(ph.url)} alt="" onClick={() => setI(k)} style={{ cursor: "pointer", borderColor: k === n ? "var(--blue)" : undefined }} />)}
+          {p.photos.map((ph, k) => /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" key={k} src={mediaUrl(ph.url)} alt="" onClick={() => setI(k)} style={{ cursor: "pointer", borderColor: k === n ? "var(--blue)" : undefined }} />)}
         </div>
       )}
     </div>
@@ -56,7 +56,7 @@ export function Gallery({ p, i, setI, ratio = "4 / 3", rounded = true }) {
 function Avatar({ p, size = 96 }) {
   const ph = p.photos.find((x) => !x.blurred) || p.photos[0];
   return ph
-    ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="pf-avatar" data-g={p.gender || undefined} src={mediaUrl(ph.url)} alt={p.name} style={{ width: size, height: size }} />
+    ? /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" className="pf-avatar" data-g={p.gender || undefined} src={mediaUrl(ph.url)} alt={p.name} style={{ width: size, height: size }} />
     : <span className="pf-avatar avatar" data-g={p.gender || undefined} style={{ width: size, height: size, fontSize: size / 2.6 }}>{initial(p)}</span>;
 }
 

@@ -145,7 +145,7 @@ export default function Users() {
               <tr key={u.id}>
                 <td>
                   <span className="user-cell">
-                    {u.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(u.image)} alt="" className="avatar-img" data-g={u.gender || undefined} /> : <span className="avatar" data-g={u.gender || undefined}>{initials(u)}</span>}
+                    {u.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={mediaUrl(u.image)} alt="" className="avatar-img" data-g={u.gender || undefined} /> : <span className="avatar" data-g={u.gender || undefined}>{initials(u)}</span>}
                     <span className="user-name">
                       <strong><ColorDot color={u.color} size={11} title={tx("Kleur")} />{[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}</strong>
                       {(tagMap.of(u.id).length > 0 || u.is_fake || u.show_public) && (
@@ -294,7 +294,7 @@ export default function Users() {
             )}
             {tab === "media" && (
             <div className="photo-row">
-              {modal.preview || modal.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={modal.preview || mediaUrl(modal.image)} alt="" className="photo-preview" /> : <span className="avatar photo-preview">{initials(modal)}</span>}
+              {modal.preview || modal.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={modal.preview || mediaUrl(modal.image)} alt="" className="photo-preview" /> : <span className="avatar photo-preview">{initials(modal)}</span>}
               <span className="row" style={{ justifyContent: "flex-start" }}>
                 <MediaField onFiles={(fs) => photo(fs[0])} />
                 {(modal.image || modal.preview) && <button type="button" className="btn sm danger" onClick={() => photo(null)}>{tx("Foto verwijderen")}</button>}

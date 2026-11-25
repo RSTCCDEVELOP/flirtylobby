@@ -271,7 +271,7 @@ export default function DonationsAdmin() {
                   <strong style={{ fontSize: ".9rem" }}>{tx("Afbeelding")}</strong>
                   <div className="pop-image-cols">
                     <div className="pop-image-left">
-                      {modal[sec].image_url ? <img src={mediaUrl(modal[sec].image_url)} alt="" style={{ maxHeight: 160, width: "auto", maxWidth: "100%" }} /> : <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Nog geen afbeelding.")}</span>}
+                      {modal[sec].image_url ? <img loading="lazy" decoding="async" src={mediaUrl(modal[sec].image_url)} alt="" style={{ maxHeight: 160, width: "auto", maxWidth: "100%" }} /> : <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Nog geen afbeelding.")}</span>}
                       <div className="sub-actions">
                         <button type="button" className="btn sm" onClick={() => setPicker(sec)}>{tx("Media")}</button>
                         {modal[sec].media && <button type="button" className="btn sm danger" onClick={() => setModal((m) => ({ ...m, [sec]: { ...m[sec], media: null, image_url: null } }))}>{tx("Verwijderen")}</button>}
@@ -287,7 +287,7 @@ export default function DonationsAdmin() {
                 <div className="sys-demo pop-preview">
                   <small className="muted">{tx("Voorbeeld")} · {langs.languages.find((l) => l.code === lang)?.native_name || lang}</small>
                   <div className="card pop-card">
-                    {modal[sec].image_url && <img src={mediaUrl(modal[sec].image_url)} alt="" style={placeStyle(modal[sec].placement)} />}
+                    {modal[sec].image_url && <img loading="lazy" decoding="async" src={mediaUrl(modal[sec].image_url)} alt="" style={placeStyle(modal[sec].placement)} />}
                     <h3 style={{ margin: 0 }}>{modal[sec].titles?.[lang] || (sec === "info" ? tx("Titel van het venster") : tx("Bedankt!"))}</h3>
                     <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{modal[sec].texts?.[lang] || tx("De tekst komt hier.")}</p>
                     {sec === "info" && <div className="don-amount" style={{ fontSize: "1.4rem" }}>€ {Number(modal.default_amount || 0).toFixed(2)}</div>}

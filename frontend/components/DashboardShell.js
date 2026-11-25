@@ -10,21 +10,14 @@
 import { useImported, IMPORTED_HREF } from "../lib/imported";
 import { tx } from "../lib/t";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import AiLiveCost from "./AiLiveCost";
-import FaqDrawer from "./FaqDrawer";
-import DefaultInstallPrompt from "./DefaultInstallPrompt";
-import SystemUpdatePrompt from "./SystemUpdatePrompt";
-import SetupWizard from "./SetupWizard";
 import ItemHelp from "./ItemHelp";
 import SidebarSearch from "./SidebarSearch";
 import { useAdminSetup, applyAdminLook, clearAdminLook } from "../lib/adminsetup";
-import LicenseChangePrompt from "./LicenseChangePrompt";
-import OnboardingNag from "./OnboardingNag";
-import WizardLoader from "./WizardLoader";
-import TermsGate from "./TermsGate";
 import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
 import ThemeToggle from "./ThemeToggle";
@@ -39,16 +32,8 @@ import { useEntity } from "../lib/entity";
 import { ADMIN_PAGES, canAdmin, lvl, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import { useEcologiAdminOn, useEcologiOn } from "../lib/ecologi";
-import AiCreditGate from "./AiCreditGate";
-import AiWelcome from "./AiWelcome";
-import TreesWelcome from "./TreesWelcome";
-import PluginGate from "./PluginGate";
 import { gateClick } from "../lib/pluginGate";
-import ManualHelp from "./ManualHelp";
 import { useLicencePhase, PHASE_NOW } from "../lib/licencePhase";
-import SandboxFirstAsk from "./SandboxFirstAsk";
-import WelcomeFirstAsk from "./WelcomeFirstAsk";
-import ManualFirstAsk from "./ManualFirstAsk";
 import { menuLabel } from "./SiteMenu";
 import { useUi } from "./Ui";
 import { api } from "../lib/api";
@@ -61,6 +46,24 @@ import FindOnPage from "./FindOnPage";
 import { IconReceipt, IconHistory, IconRocket, IconLeaf, IconTree, IconTag, IconBriefcase, IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
 
 import { useUpdates } from "../lib/updates";
+
+// Loaded when needed (after the first paint), not in the main bundle: prompts, gates and the set-up wizard.
+const FaqDrawer = dynamic(() => import("./FaqDrawer"), { ssr: false });
+const DefaultInstallPrompt = dynamic(() => import("./DefaultInstallPrompt"), { ssr: false });
+const SystemUpdatePrompt = dynamic(() => import("./SystemUpdatePrompt"), { ssr: false });
+const SetupWizard = dynamic(() => import("./SetupWizard"), { ssr: false });
+const LicenseChangePrompt = dynamic(() => import("./LicenseChangePrompt"), { ssr: false });
+const OnboardingNag = dynamic(() => import("./OnboardingNag"), { ssr: false });
+const WizardLoader = dynamic(() => import("./WizardLoader"), { ssr: false });
+const TermsGate = dynamic(() => import("./TermsGate"), { ssr: false });
+const AiCreditGate = dynamic(() => import("./AiCreditGate"), { ssr: false });
+const AiWelcome = dynamic(() => import("./AiWelcome"), { ssr: false });
+const TreesWelcome = dynamic(() => import("./TreesWelcome"), { ssr: false });
+const PluginGate = dynamic(() => import("./PluginGate"), { ssr: false });
+const ManualHelp = dynamic(() => import("./ManualHelp"), { ssr: false });
+const SandboxFirstAsk = dynamic(() => import("./SandboxFirstAsk"), { ssr: false });
+const WelcomeFirstAsk = dynamic(() => import("./WelcomeFirstAsk"), { ssr: false });
+const ManualFirstAsk = dynamic(() => import("./ManualFirstAsk"), { ssr: false });
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },

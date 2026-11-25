@@ -19,7 +19,7 @@ import SiteMenu from "./SiteMenu";
 import { ChatButton, DirectIndicator } from "./Chat";
 import NotificationBell from "./NotificationBell";
 import SandboxPill from "./SandboxPill";
-import HeaderEdit from "./HeaderEdit";
+import HeaderEdit from "./HeaderEditLazy";  // the edit panel is only loaded in edit mode
 import SideMenu from "./SideMenu";
 
 export default function SiteHeader() {

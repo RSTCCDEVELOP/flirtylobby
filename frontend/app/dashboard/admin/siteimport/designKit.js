@@ -98,7 +98,7 @@ function objectPreview(slug, photos, none) {
   const real = (photos || []).filter((x) => x && x.url && !/\.(mp4|webm)$/i.test(x.url || "")).slice(0, 6).map((x) => mediaUrl(x.url));
   const urls = real.length ? real : [none, none, none, none].filter(Boolean);
   const n = urls.length || 4, kind = (MOCK_KIND.find(([k]) => slug.includes(k)) || [0, "slide"])[1];
-  const img = (u, k, st = "") => (u ? `<img src="${esc(u)}" alt="" style="${st}">` : `<i class="${id}-ph" style="${st}"></i>`);
+  const img = (u, k, st = "") => (u ? `<img loading="lazy" decoding="async" src="${esc(u)}" alt="" style="${st}">` : `<i class="${id}-ph" style="${st}"></i>`);
   const list = urls.length ? urls : Array.from({ length: n }, () => null);
   const radios = list.map((_, k) => `<input type="radio" name="${id}" id="${id}-${k}" class="${id}-r"${k === 0 ? " checked" : ""}>`).join("");
   const dots = `<div class="${id}-dots">${list.map((_, k) => `<label for="${id}-${k}" aria-label="${k + 1}"></label>`).join("")}</div>`;
@@ -197,7 +197,7 @@ export function styleTile(b, mode = b.color_mode === "dark" ? "dark" : "light") 
   const name = esc(b.name || "Mijn website"), nav = pg.slice(0, 5), feat = (pg.slice(1, 4).length ? pg.slice(1, 4) : ["Onderdeel één", "Onderdeel twee", "Onderdeel drie"]);
   const ink = (bg) => (contrast(bg, "#ffffff") >= contrast(bg, "#111111") ? "#ffffff" : "#111111");
   const onDark = ink(c.dark), onPrimary = ink(c.primary), onSecondary = ink(c.secondary);
-  const img = (i, h, tone) => (ph[i] ? `<img src="${esc(mediaUrl(ph[i].url))}" alt="" style="height:${h}px">` : `<div class="ph" style="height:${h}px;background:linear-gradient(135deg,${tone},${tone}aa)"></div>`);
+  const img = (i, h, tone) => (ph[i] ? `<img loading="lazy" decoding="async" src="${esc(mediaUrl(ph[i].url))}" alt="" style="height:${h}px">` : `<div class="ph" style="height:${h}px;background:linear-gradient(135deg,${tone},${tone}aa)"></div>`);
   const cards = feat.map((t, i) => `<div class="card">${img(i + 1, 120, i % 2 ? c.secondary : c.primary)}<h3>${esc(t)}</h3><p>Een korte, duidelijke tekst over dit onderdeel van de website.</p><a class="lnk">Lees meer →</a></div>`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
 *{box-sizing:border-box}body{margin:0;font-family:${f};background:${c.bg};color:${c.text};line-height:1.6}.c{max-width:1040px;margin:0 auto;padding:0 1.4rem}a{text-decoration:none}

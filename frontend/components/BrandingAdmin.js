@@ -39,7 +39,7 @@ function AssetCard({ slot, info, url, onChange, onError, L }) {
     <div className="asset">
       <div className={`asset-preview ${slot.endsWith("_dark") ? "on-dark" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {url ? <img src={mediaUrl(url)} alt={info.label} /> : <span className="muted">{tx("Geen afbeelding")}</span>}
+        {url ? <img loading="lazy" decoding="async" src={mediaUrl(url)} alt={info.label} /> : <span className="muted">{tx("Geen afbeelding")}</span>}
       </div>
       <strong>{info.label}</strong>
       <small className="muted">{info.hint}</small>
@@ -117,7 +117,7 @@ export default function BrandingAdmin() {
           {photos.map((p, i) => (
             <div className="photo-item" key={p.id}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={mediaUrl(p.url)} alt="" />
+              <img loading="lazy" decoding="async" src={mediaUrl(p.url)} alt="" />
               <input defaultValue={p.caption} placeholder={tx("Bijschrift (optioneel)")} maxLength={255} onBlur={(e) => caption(p, e.target.value)} />
               <div className="row" style={{ justifyContent: "space-between" }}>
                 <span>

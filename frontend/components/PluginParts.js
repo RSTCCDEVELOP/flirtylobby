@@ -323,7 +323,7 @@ function ItemSettings({ p, item, onSaved, onClose, onPreview }) {
           <>
             <div className="row" style={{ justifyContent: "space-between", alignItems: "center", flexWrap: "nowrap", gap: "1rem" }}>
               <span style={{ width: 160, height: 100, background: "var(--bg)", borderRadius: 10, display: "grid", placeItems: "center", overflow: "hidden", flex: "none" }}>
-                {picture && cover ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={`${cover}${picture}`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <small className="muted">{tx("Geen afbeelding")}</small>}
+                {picture && cover ? /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={`${cover}${picture}`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <small className="muted">{tx("Geen afbeelding")}</small>}
               </span>
               <span style={{ flex: 1 }}><strong>{tx("Afbeelding")}</strong><br /><small className="muted">{tx("De afbeelding van het spel in het overzicht van de leden. Zonder eigen afbeelding geldt die van het spel zelf.")}</small></span>
               <span className="col-actions" style={{ display: "grid", gap: ".4rem", width: 110, flex: "none" }}>
@@ -378,7 +378,7 @@ function ItemSettings({ p, item, onSaved, onClose, onPreview }) {
           const block = (l) => {
             const title = meta.titles[l.code] || meta.titles.nl || item.title;
             const text = meta.about.texts[l.code] || meta.about.texts.nl || meta.descriptions[l.code] || meta.descriptions.nl || item.description;
-            const pics = imgs.map((f) => <img key={f} src={`${cover}${f}`} alt="" style={{ width: "100%", height: lay === "gallery" || lay === "top" ? 110 : 90, objectFit: "cover", borderRadius: "var(--radius, 10px)" }} />);
+            const pics = imgs.map((f) => <img loading="lazy" decoding="async" key={f} src={`${cover}${f}`} alt="" style={{ width: "100%", height: lay === "gallery" || lay === "top" ? 110 : 90, objectFit: "cover", borderRadius: "var(--radius, 10px)" }} />);
             const grid = <div style={{ display: "grid", gridTemplateColumns: lay === "gallery" || lay === "top" ? "repeat(auto-fill,minmax(110px,1fr))" : "1fr", gap: ".4rem", width: lay === "gallery" || lay === "top" ? "100%" : 130, flex: "none" }}>{pics}</div>;
             return (
               <div className="card" dir={l.rtl ? "rtl" : undefined} style={{ display: "flex", flexDirection: lay === "gallery" ? "column" : lay === "top" ? "column-reverse" : lay === "left" ? "row" : "row-reverse", gap: ".8rem", alignItems: "flex-start" }}>
@@ -398,7 +398,7 @@ function ItemSettings({ p, item, onSaved, onClose, onPreview }) {
                 <div style={{ width: 110 }}><MediaField onFiles={addAbout} /></div>
                 {imgs.map((f) => (
                   <span key={f} style={{ position: "relative", width: 64, height: 64, flex: "none" }}>
-                    {cover && /* eslint-disable-next-line @next/next/no-img-element */ <img src={`${cover}${f}`} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }} />}
+                    {cover && /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={`${cover}${f}`} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8 }} />}
                     <button type="button" className="btn sm danger" aria-label={tx("Verwijder")} title={tx("Verwijder")} style={{ position: "absolute", top: -6, right: -6, padding: "0 .4rem", minWidth: 0 }} onClick={() => dropAbout(f)}>×</button>
                   </span>
                 ))}

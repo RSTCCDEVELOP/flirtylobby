@@ -115,7 +115,7 @@ function MenuPanel({ v = {}, canEdit }) {
 }
 
 function PageMock({ type, logo, v = {}, scroll = false, words = false }) { // scroll: the page is shown scrolled down (does the header stay at the top?)
-  const Logo = () => (logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logo} alt="" className="lay-logo-img" /> : <i className="lay-logo" />);
+  const Logo = () => (logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img loading="lazy" decoding="async" src={logo} alt="" className="lay-logo-img" /> : <i className="lay-logo" />);
   const attrs = { "data-mhl": v.header_layout || "classic", "data-mhs": v.header_style || "solid", "data-mmenu": v.menu_style || "text", "data-mcase": v.menu_case || "normal", "data-mfl": v.footer_layout || "brand", "data-mft": v.footer_tone || "card", "data-mfbrand": v.footer_brand || "logo", "data-mfsocial": v.footer_social || "show", "data-mfmeta": v.footer_meta || "show", "data-mfsize": v.footer_size || "normal", "data-mblocks": v.block_style || "card" };
   if (type === "site") {
     const noHead = v.page_header === "hide", noFoot = v.page_footer === "hide";

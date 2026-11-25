@@ -134,8 +134,8 @@ export default function TemplatesPage() {
             {pick.t.description && <p className="muted" style={{ margin: 0 }}>{pick.t.description}</p>}
             {pick.t.previews > 0 && (
               <>
-                <img className="tpl-big" src={img(pick.t, pick.n)} alt={pick.t.name} />
-                {pick.t.previews > 1 && <div className="row" style={{ gap: ".4rem", flexWrap: "wrap" }}>{Array.from({ length: pick.t.previews }, (_, i) => <button type="button" key={i} className={`tpl-thumb${pick.n === i ? " on" : ""}`} onClick={() => setPick({ ...pick, n: i })}><img src={img(pick.t, i)} alt="" /></button>)}</div>}
+                <img loading="lazy" decoding="async" className="tpl-big" src={img(pick.t, pick.n)} alt={pick.t.name} />
+                {pick.t.previews > 1 && <div className="row" style={{ gap: ".4rem", flexWrap: "wrap" }}>{Array.from({ length: pick.t.previews }, (_, i) => <button type="button" key={i} className={`tpl-thumb${pick.n === i ? " on" : ""}`} onClick={() => setPick({ ...pick, n: i })}><img loading="lazy" decoding="async" src={img(pick.t, i)} alt="" /></button>)}</div>}
               </>
             )}
             {d.can_use ? (

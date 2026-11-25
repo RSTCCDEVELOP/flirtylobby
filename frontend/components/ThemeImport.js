@@ -179,13 +179,13 @@ export default function ThemeImport({ ai, onClose, onSaved }) {
               <div className="row" style={{ justifyContent: "flex-start", alignItems: "stretch" }}>
                 {SLOTS.filter(([k]) => d.assets[k]).map(([k, label]) => (
                   <label key={k} className="check card" style={{ padding: ".5rem .7rem", flexDirection: "column", alignItems: "flex-start" }}>
-                    <span style={{ width: 120, height: 64, display: "block", background: "var(--bg)", borderRadius: 8, overflow: "hidden" }}>{/* eslint-disable-next-line @next/next/no-img-element */}<img src={d.assets[k].url} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} /></span>
+                    <span style={{ width: 120, height: 64, display: "block", background: "var(--bg)", borderRadius: 8, overflow: "hidden" }}>{/* eslint-disable-next-line @next/next/no-img-element */}<img loading="lazy" decoding="async" src={d.assets[k].url} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} /></span>
                     <span><input type="checkbox" checked={useAssets.includes(k)} onChange={() => toggle(useAssets, setUseAssets, k)} /> {tx(label)}</span>
                   </label>
                 ))}
                 {d.home.map((h, i) => (
                   <label key={i} className="check card" style={{ padding: ".5rem .7rem", flexDirection: "column", alignItems: "flex-start" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}<img src={h.url} alt="" style={{ width: 120, height: 64, objectFit: "cover", borderRadius: 8 }} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}<img loading="lazy" decoding="async" src={h.url} alt="" style={{ width: 120, height: 64, objectFit: "cover", borderRadius: 8 }} />
                     <span><input type="checkbox" checked={useHome.includes(i)} onChange={() => toggle(useHome, setUseHome, i)} /> {tx("Homepagefoto {0}", i + 1)}</span>
                   </label>
                 ))}
@@ -202,7 +202,7 @@ export default function ThemeImport({ ai, onClose, onSaved }) {
                       <button type="button" className="btn slider-nav" aria-label={tx("Vorige foto")} onClick={() => setSlide((slide + d.photos.length - 1) % d.photos.length)}>‹</button>
                       <div className="slider-main">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={d.photos[slide].url} alt={d.photos[slide].name} />
+                        <img loading="lazy" decoding="async" src={d.photos[slide].url} alt={d.photos[slide].name} />
                       </div>
                       <button type="button" className="btn slider-nav" aria-label={tx("Volgende foto")} onClick={() => setSlide((slide + 1) % d.photos.length)}>›</button>
                     </div>
@@ -213,7 +213,7 @@ export default function ThemeImport({ ai, onClose, onSaved }) {
                     <div className="slider-strip">
                       {d.photos.map((p, i) => (
                         <button key={i} type="button" className={`slider-thumb ${i === slide ? "on" : ""} ${usePhotos.includes(i) ? "picked" : ""}`} onClick={() => setSlide(i)} aria-label={p.name}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}<img src={p.url} alt="" />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}<img loading="lazy" decoding="async" src={p.url} alt="" />
                           {usePhotos.includes(i) && <span className="slider-check">✓</span>}
                         </button>
                       ))}

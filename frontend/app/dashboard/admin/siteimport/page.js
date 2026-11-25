@@ -255,7 +255,7 @@ function Detail({ imp, onChanged, onApply, busy }) {
           {d.assets.map((a) => (
             <figure key={a.media}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={mediaUrl(a.url)} alt={a.name} />
+              <img loading="lazy" decoding="async" src={mediaUrl(a.url)} alt={a.name} />
               <figcaption><span className="badge">{tx(ROLE_NAME[a.role] || "Afbeelding")}</span></figcaption>
               <span className="row" style={{ flexWrap: "nowrap", gap: ".3rem" }}>
                 <select value={pick[a.media] || (a.role !== "image" ? a.role : "logo")} onChange={(e) => setPick({ ...pick, [a.media]: e.target.value })}>
@@ -393,7 +393,7 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
           {pr.assets.map((a) => { const c = assets.find((x) => x.file === a.file); return (
             <figure key={a.file} style={{ opacity: c.include ? 1 : .45 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={mediaUrl(a.url)} alt={a.name} />
+              <img loading="lazy" decoding="async" src={mediaUrl(a.url)} alt={a.name} />
               <label className="check"><input type="checkbox" checked={c.include} onChange={(e) => setA(a.file, { include: e.target.checked })} /> {a.name}</label>
               <select value={c.role} disabled={!c.include} onChange={(e) => setA(a.file, { role: e.target.value })}>
                 {[["logo", "Logo"], ["logo_dark", "Logo (donker)"], ["favicon", "Favicon"], ["icon", "App-icoon"], ["og_image", "Deelafbeelding"], ["image", "Afbeelding"]].map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}
