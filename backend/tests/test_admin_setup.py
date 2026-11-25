@@ -117,3 +117,13 @@ def test_the_look_of_the_admin_has_choices_that_are_checked():
     for bad in ({"frame": "x"}, {"width": "x"}, {"density": "x"}, {"tile_size": "x"}, {"font": "x"}, {"sidebar_width": "x"}):
         assert adminsetup.validate(bad)[1], bad
     assert adminsetup.DEFAULTS["width"] == "full" and adminsetup.DEFAULTS["density"] == "normal"  # nothing changes until the setup says so
+
+
+def test_page_back_button_is_off_unless_chosen():
+    from apps.pages import layout
+
+    assert "back" not in layout.clean({"rows": []})
+    assert "back" not in layout.clean({"rows": [], "back": {"on": False, "pos": "right"}})
+    out = layout.clean({"rows": [], "back": {"on": True, "pos": "middle", "place": "float", "size": "xl"}})
+    assert out["back"] == {"on": True, "pos": "left", "place": "float", "size": "md"}
+    assert layout.clean({"rows": [], "back": {"on": True, "pos": "right", "size": "lg"}})["back"] == {"on": True, "pos": "right", "place": "page", "size": "lg"}

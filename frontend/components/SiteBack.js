@@ -11,11 +11,13 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import BackButton from "./BackButton";
 
-// A "back" button on every page of the website (not on the home page): to the page the visitor came from, else to the home page.
-// (The dashboard has its own, in its menu bar; the login page has "Terug naar website" in its card.)
-export default function SiteBack() {
+// The back button of a page. It is only there when the editor switched it on for that page (page editor -> Pagina -> Terug-knop);
+// cfg = {on, pos: left|center|right, place: page|float, size: sm|md|lg}. "page" = in the page above the content, "float" = fixed just under the header.
+export default function SiteBack({ cfg }) {
   const pathname = usePathname();
-  useEffect(() => { // the button hangs just under the header, whatever its height (the menu can wrap onto a second row), with a little space
+  const float = cfg?.on && cfg.place === "float";
+  useEffect(() => {
+    if (!float) return undefined;
     const set = () => {
       const h = document.querySelector(".site-header");
       document.documentElement.style.setProperty("--site-back-top", `${Math.max(0, Math.round(h ? h.getBoundingClientRect().bottom : 0)) + 12}px`);
@@ -26,7 +28,7 @@ export default function SiteBack() {
     if (ro) ro.observe(h);
     window.addEventListener("resize", set); window.addEventListener("scroll", set, { passive: true });
     return () => { ro?.disconnect(); window.removeEventListener("resize", set); window.removeEventListener("scroll", set); };
-  }, [pathname]);
-  if (!pathname || pathname === "/" || pathname === "/login" || pathname === "/easy2edit_version" || pathname.startsWith("/dashboard")) return null;  // the login card has its own "back to the website"
-  return <div className="site-back"><BackButton pathname={pathname} fallback="/" /></div>;
+  }, [float, pathname]);
+  if (!cfg?.on || !pathname || pathname.startsWith("/dashboard")) return null;
+  return <div className={`site-back ${float ? "float" : "inpage"}`} data-pos={cfg.pos || "left"} data-size={cfg.size || "md"}><BackButton pathname={pathname} fallback="/" /></div>;
 }

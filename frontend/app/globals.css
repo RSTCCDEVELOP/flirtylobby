@@ -5194,3 +5194,18 @@ html[data-adm-motion="off"] .shell *, html[data-adm-motion="off"] .shell *::befo
 .as-grid-s { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 .as-seg { max-width: 100%; }
 .as-seg button { padding: .42rem .85rem; }
+
+/* terug-knop per pagina (pagina-editor -> Pagina -> Terug-knop): plek, uitlijning en grootte */
+.site-back.inpage { position: static; display: flex; justify-content: flex-start; width: min(100%, var(--content-w, 72rem)); margin: 0 auto; padding: 1rem 1.25rem 0; box-sizing: border-box; }
+.site-back.inpage[data-pos="center"] { justify-content: center; } .site-back.inpage[data-pos="right"] { justify-content: flex-end; }
+.site-back.float { position: fixed; top: var(--site-back-top, 4.7rem); left: 1.5rem; right: auto; }
+.site-back.float[data-pos="center"] { left: 50%; transform: translateX(-50%); } .site-back.float[data-pos="right"] { left: auto; right: 1.5rem; }
+.site-back .back-btn { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.site-back[data-size="sm"] .back-btn { font-size: .8rem; padding: .35rem .7rem; max-width: 9rem; } .site-back[data-size="sm"] .back-btn svg { width: 13px; height: 13px; }
+.site-back[data-size="md"] .back-btn { max-width: 14rem; }
+.site-back[data-size="lg"] .back-btn { font-size: 1.05rem; padding: .8rem 1.5rem; max-width: 22rem; }
+@media (max-width: 760px) { .site-back.float { left: .8rem; } .site-back.float[data-pos="right"] { left: auto; right: .8rem; } .site-back.float[data-pos="center"] { left: 50%; } }
+
+/* "Content niet beschikbaar" en "Pagina niet gevonden": de tekst staat op een kaart, dus altijd leesbaar, wat de achtergrond van het thema ook is */
+.notfound { width: min(100% - 2rem, 44rem); margin: 3rem auto; padding: 3rem 2rem; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, .12); box-sizing: border-box; min-height: 0; }
+.notfound p, .notfound p.muted { color: var(--muted); }

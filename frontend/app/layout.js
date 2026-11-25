@@ -8,7 +8,6 @@
 import StickyHeader from "../components/StickyHeader";
 import DemoNotice from "../components/DemoNotice";
 import AiCreditAsk from "../components/AiCreditAsk";
-import SiteBack from "../components/SiteBack";
 import SiteCredit from "../components/SiteCredit";
 import "./globals.css";
 import { BrandingProvider } from "../components/BrandingContext";
@@ -176,7 +175,6 @@ export default async function RootLayout({ children }) {
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
               <DirectHostProvider>
               <PageBackdrop map={backgrounds} />
-              <SiteBack />
               <PageTransition>{children}</PageTransition>
               <SiteCredit show={site?.show_credit !== false} url={site?.easy2edit?.site_url} badge={energyBadge} />
               <EditBanner />

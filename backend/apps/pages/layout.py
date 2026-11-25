@@ -468,6 +468,18 @@ def _list(v):
     return {"list": out} if out != {"view": "grid", "center": False} else {}
 
 
+BACK_POS = ("left", "center", "right")
+BACK_PLACE = ("page", "float")
+BACK_SIZE = ("sm", "md", "lg")
+
+
+def _back(v):
+    """The back button of a page (off unless the editor switched it on): where it stands (left, centre, right; in the page or floating under the header) and how large it may be."""
+    if not isinstance(v, dict) or not v.get("on"):
+        return {}
+    return {"back": {"on": True, "pos": v.get("pos") if v.get("pos") in BACK_POS else "left", "place": v.get("place") if v.get("place") in BACK_PLACE else "page", "size": v.get("size") if v.get("size") in BACK_SIZE else "md"}}
+
+
 def clean(data):
     """Returns the cleaned layout or raises ValueError with a readable message."""
     rows, out, n_items, seen = (data or {}).get("rows") or [], [], 0, set()
@@ -516,7 +528,7 @@ def clean(data):
                 a, n = f"{base}-{n}", n + 1
             seen.add(a)
             row["anchor"] = a
-    return {"rows": out, "bg": clean_bg((data or {}).get("bg")), "preset": (data or {}).get("preset") if (data or {}).get("preset") in PRESETS else "", **({"hero_off": True} if (data or {}).get("hero_off") else {}), **({"title_off": True} if (data or {}).get("title_off") else {}), **_list((data or {}).get("list")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}), **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
+    return {"rows": out, "bg": clean_bg((data or {}).get("bg")), "preset": (data or {}).get("preset") if (data or {}).get("preset") in PRESETS else "", **({"hero_off": True} if (data or {}).get("hero_off") else {}), **({"title_off": True} if (data or {}).get("title_off") else {}), **_list((data or {}).get("list")), **_back((data or {}).get("back")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}), **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
 
 
 PRESETS = ("auto", "single", "two", "three", "four", "hero", "split")  # the layouts ("Opmaak") a page can be given; "auto" = the layout of the community theme (standard pages only)
@@ -551,7 +563,7 @@ def reflow(data, preset):
     else:
         rows = [r for r in old if not r.get("hero")]
     rows = heroes + rows
-    return {"rows": rows, "bg": (data or {}).get("bg", {}), **({"hero_off": True} if (data or {}).get("hero_off") else {}), **({"title_off": True} if (data or {}).get("title_off") else {}), **_list((data or {}).get("list")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}),  **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
+    return {"rows": rows, "bg": (data or {}).get("bg", {}), **({"hero_off": True} if (data or {}).get("hero_off") else {}), **({"title_off": True} if (data or {}).get("title_off") else {}), **_list((data or {}).get("list")), **_back((data or {}).get("back")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}),  **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
 
 
 @api_view(["POST"])

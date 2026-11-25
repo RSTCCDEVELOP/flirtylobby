@@ -44,6 +44,7 @@ import BlockNav from "./BlockNav";
 import { IconEdit, IconLock, IconTrash, IconUnlock } from "./Icons";
 import { linkProps } from "../lib/linkopen";
 import { createPortal } from "react-dom";
+import SiteBack from "./SiteBack";
 
 const uid = () => Math.random().toString(16).slice(2, 10).padEnd(8, "0");
 const newCell = () => ({ id: uid(), width: "auto", halign: "left", valign: "top", items: [] });
@@ -796,6 +797,14 @@ export default function PageBlocks({ pageKey, title = "" }) {
           <section className="pb-pgsec"><h4>{tx("Ruimte en breedte")}</h4><div className="pb-listopts"><span className="muted">{tx("Ruimte (padding)")}:</span><select value={layout.pad || "md"} aria-label={tx("Ruimte (padding)")} onChange={(e) => change((x) => { if (e.target.value === "md") delete x.pad; else x.pad = e.target.value; return x; })}>{PAD_OPTS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
 <span className="muted">{tx("Items per pagina")}:</span><select value={pageSize} aria-label={tx("Items per pagina")} onChange={(e) => change((x) => { if (e.target.value === "all") delete x.page_size; else x.page_size = e.target.value; return x; })}>{["5", "10", "25", "100", "all"].map((v) => <option key={v} value={v}>{v === "all" ? tx("Alles") : v}</option>)}</select>
 <span className="muted">{tx("Breedte van de pagina")}:</span><span className="pb-seg">{[["column", "In de kolom"], ["full", "Paginabreed"]].map(([k, l]) => <button type="button" key={k} className={(pageWide ? "full" : "column") === k ? "on" : ""} onClick={() => change((x) => { if (k === "full") x.page_width = "full"; else delete x.page_width; return x; })}>{tx(l)}</button>)}</span></div></section>
+          <section className="pb-pgsec"><h4>{tx("Terug-knop")}</h4>
+            <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!!layout.back?.on} onChange={(e) => change((x) => { if (e.target.checked) x.back = { on: true, pos: x.back?.pos || "left", place: x.back?.place || "page", size: x.back?.size || "md" }; else delete x.back; return x; })} /><span /></span><span>{tx("Terug-knop tonen")} <small className="muted">{tx("Een knop naar de vorige pagina. Standaard staat hij uit.")}</small></span></label>
+            {layout.back?.on && <div className="pb-listopts">
+              <span className="muted">{tx("Plek")}:</span><span className="pb-seg">{[["page", "In de pagina"], ["float", "Zwevend onder de header"]].map(([k, l]) => <button type="button" key={k} className={(layout.back.place || "page") === k ? "on" : ""} onClick={() => change((x) => { x.back = { ...x.back, place: k }; return x; })}>{tx(l)}</button>)}</span>
+              <span className="muted">{tx("Uitlijning")}:</span><span className="pb-seg">{[["left", "Links"], ["center", "Midden"], ["right", "Rechts"]].map(([k, l]) => <button type="button" key={k} className={(layout.back.pos || "left") === k ? "on" : ""} onClick={() => change((x) => { x.back = { ...x.back, pos: k }; return x; })}>{tx(l)}</button>)}</span>
+              <span className="muted">{tx("Maximale grootte")}:</span><span className="pb-seg">{[["sm", "Klein"], ["md", "Normaal"], ["lg", "Groot"]].map(([k, l]) => <button type="button" key={k} className={(layout.back.size || "md") === k ? "on" : ""} onClick={() => change((x) => { x.back = { ...x.back, size: k }; return x; })}>{tx(l)}</button>)}</span>
+            </div>}
+          </section>
           <section className="pb-pgsec"><h4>{tx("Lijsten")}</h4><div className="pb-listopts"><span className="muted">{tx("Items zoals spelletjes en producten")}:</span>
           <span className="pb-seg">{[["grid", "Raster"], ["rows", "Rijen"]].map(([k, l]) => <button type="button" key={k} className={listView === k ? "on" : ""} onClick={() => change((x) => { x.list = { view: k, center: !!x.list?.center }; return x; })}>{tx(l)}</button>)}</span>
 <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={listCenter} onChange={(e) => change((x) => { x.list = { view: x.list?.view || "grid", center: e.target.checked }; return x; })} /><span /></span><span>{tx("Centreren")}</span></label></div></section>
@@ -807,6 +816,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
             </div>
           )}</div>
       )}
+      {layout?.back?.on && <SiteBack cfg={layout.back} />}
       {heroTheme && !heroRow && (title || h1) && (
         <div className="pb-rowwrap hero" data-t={heroTheme}><h1 className="pb-hero-title">{title || h1}</h1></div>
       )}
