@@ -9534,5 +9534,14 @@
   "Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed.": "O tema foi aplicado. Queres que o designer volte a colorir também o design, para que todas as cores combinem? Isto usa crédito de IA.",
   "Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.": "Escolhi outro tema de cores. Volta a colorir o design atual com as novas cores (blocos, botões, ícones, destaques e imagens, sempre que possível). Mantém as páginas e os textos.",
   "Nee, zo laten": "Não, deixar assim",
-  "Opnieuw inkleuren": "Recolorir"
+  "Opnieuw inkleuren": "Recolorir",
+  "Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Um perfil pronto a usar de funções, grupos de utilizadores com acesso a módulos e utilizadores de demonstração para esta instalação. Só é acrescentado algo: o que já existe fica como está.",
+  "Het profiel van rollen, groepen en demo-gebruikers van deze installatie wordt gemaakt zodra hij wordt ingesteld. Kies de stappen op het tabblad Gebruikers en rechten.": "O perfil de funções, grupos e utilizadores de demonstração desta instalação é criado assim que for configurada. Escolha os passos no separador Utilizadores e direitos.",
+  "Maken bij het instellen van deze installatie": "Criar ao configurar esta instalação",
+  "Opgeslagen. De rollen, groepen en rechten worden gemaakt zodra deze installatie wordt ingesteld.": "Guardado. As funções, os grupos e os direitos serão criados assim que esta instalação for configurada.",
+  "Rechten en groepen meenemen bij de installatie": "Incluir direitos e grupos na instalação",
+  "Rollen, groepen en rechten meemaken": "Criar também funções, grupos e direitos",
+  "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Funções, grupos com acesso a módulos e utilizadores de demonstração que pertencem a esta instalação. Se estiver ativado, são criados assim que a instalação for configurada. Só é acrescentado algo: o que já existe fica como está.",
+  "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "Se estiver desativado, pode criá-los mais tarde em Admin → Users → Configuração padrão.",
+  "Voor deze installatie is er geen set van rollen en groepen.": "Para esta instalação não há nenhum conjunto de funções e grupos."
 }

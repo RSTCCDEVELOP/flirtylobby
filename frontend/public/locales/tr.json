@@ -9534,5 +9534,14 @@
   "Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed.": "Tema uygulandı. Tüm renkler uyumlu olsun diye tasarımcının tasarımı da yeniden renklendirmesini ister misin? Bu, yapay zeka kredisi kullanır.",
   "Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.": "Başka bir renk teması seçtim. Mevcut tasarımı yeni renklerle yeniden renklendir (mümkün olduğunda bloklar, düğmeler, simgeler, vurgular ve görseller). Sayfaları ve metinleri koru.",
   "Nee, zo laten": "Hayır, böyle kalsın",
-  "Opnieuw inkleuren": "Yeniden renklendir"
+  "Opnieuw inkleuren": "Yeniden renklendir",
+  "Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Bu kurulum için hazır kullanıma uygun bir rol, modüllere erişimi olan kullanıcı grubu ve demo kullanıcı profili. Yalnızca ekleme yapılır: mevcut olanlar olduğu gibi kalır.",
+  "Het profiel van rollen, groepen en demo-gebruikers van deze installatie wordt gemaakt zodra hij wordt ingesteld. Kies de stappen op het tabblad Gebruikers en rechten.": "Bu kurulumun rol, grup ve demo kullanıcı profili, kurulum yapılır yapılmaz oluşturulur. Adımları Kullanıcılar ve haklar sekmesinden seçin.",
+  "Maken bij het instellen van deze installatie": "Bu kurulum yapılırken oluştur",
+  "Opgeslagen. De rollen, groepen en rechten worden gemaakt zodra deze installatie wordt ingesteld.": "Kaydedildi. Roller, gruplar ve haklar, bu kurulum yapılır yapılmaz oluşturulacak.",
+  "Rechten en groepen meenemen bij de installatie": "Haklar ve grupları kuruluma dahil et",
+  "Rollen, groepen en rechten meemaken": "Roller, gruplar ve hakları da oluştur",
+  "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Bu kuruluma ait roller, modüllere erişimi olan gruplar ve demo kullanıcılar. Açıksa, kurulum yapılır yapılmaz oluşturulurlar. Yalnızca ekleme yapılır: mevcut olanlar olduğu gibi kalır.",
+  "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "Kapalıysa, bunları daha sonra Admin → Users → Standart kurulum bölümünden kendiniz oluşturabilirsiniz.",
+  "Voor deze installatie is er geen set van rollen en groepen.": "Bu kurulum için bir rol ve grup seti yok."
 }

@@ -9534,5 +9534,14 @@
   "Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed.": "The theme has been applied. Do you want the designer to recolour the design too, so all colours match? This uses AI credit.",
   "Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.": "I have chosen a different colour theme. Recolour the current design with the new colours (blocks, buttons, icons, accents and images where possible). Keep the pages and the texts.",
   "Nee, zo laten": "No, leave it as it is",
-  "Opnieuw inkleuren": "Recolour"
+  "Opnieuw inkleuren": "Recolour",
+  "Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "A ready-to-use profile of roles, user groups with access to modules and demo users for this installation. Things are only added: whatever already exists stays as it is.",
+  "Het profiel van rollen, groepen en demo-gebruikers van deze installatie wordt gemaakt zodra hij wordt ingesteld. Kies de stappen op het tabblad Gebruikers en rechten.": "The profile of roles, groups and demo users of this installation is created as soon as it is set up. Choose the steps on the Users and rights tab.",
+  "Maken bij het instellen van deze installatie": "Create when setting up this installation",
+  "Opgeslagen. De rollen, groepen en rechten worden gemaakt zodra deze installatie wordt ingesteld.": "Saved. The roles, groups and rights will be created as soon as this installation is set up.",
+  "Rechten en groepen meenemen bij de installatie": "Include rights and groups in the installation",
+  "Rollen, groepen en rechten meemaken": "Create roles, groups and rights too",
+  "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Roles, groups with access to modules and demo users that belong to this installation. If this is on, they are created as soon as the installation is set up. Things are only added: whatever already exists stays as it is.",
+  "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "If this is off, you can create them yourself later at Admin → Users → Standard setup.",
+  "Voor deze installatie is er geen set van rollen en groepen.": "There is no set of roles and groups for this installation."
 }

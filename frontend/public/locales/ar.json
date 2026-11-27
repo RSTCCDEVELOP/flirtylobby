@@ -9534,5 +9534,14 @@
   "Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed.": "تم تطبيق السمة. هل تريد أن يعيد المصمم تلوين التصميم أيضًا لتتوافق كل الألوان؟ هذا يستخدم رصيد الذكاء الاصطناعي.",
   "Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.": "لقد اخترت سمة ألوان أخرى. أعد تلوين التصميم الحالي بالألوان الجديدة (الكتل والأزرار والأيقونات واللمسات المميزة والصور حيثما أمكن). حافظ على الصفحات والنصوص.",
   "Nee, zo laten": "لا، اتركه كما هو",
-  "Opnieuw inkleuren": "إعادة التلوين"
+  "Opnieuw inkleuren": "إعادة التلوين",
+  "Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "ملف جاهز للاستخدام يضم الأدوار ومجموعات المستخدمين مع صلاحية الوصول إلى الوحدات ومستخدمين تجريبيين لهذا التثبيت. تتم الإضافة فقط: ما هو موجود أصلًا يبقى كما هو.",
+  "Het profiel van rollen, groepen en demo-gebruikers van deze installatie wordt gemaakt zodra hij wordt ingesteld. Kies de stappen op het tabblad Gebruikers en rechten.": "يتم إنشاء ملف الأدوار والمجموعات والمستخدمين التجريبيين لهذا التثبيت فور إعداده. اختر الخطوات في تبويب المستخدمون والصلاحيات.",
+  "Maken bij het instellen van deze installatie": "الإنشاء عند إعداد هذا التثبيت",
+  "Opgeslagen. De rollen, groepen en rechten worden gemaakt zodra deze installatie wordt ingesteld.": "تم الحفظ. سيتم إنشاء الأدوار والمجموعات والصلاحيات فور إعداد هذا التثبيت.",
+  "Rechten en groepen meenemen bij de installatie": "تضمين الصلاحيات والمجموعات في التثبيت",
+  "Rollen, groepen en rechten meemaken": "إنشاء الأدوار والمجموعات والصلاحيات أيضًا",
+  "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "الأدوار والمجموعات مع صلاحية الوصول إلى الوحدات والمستخدمون التجريبيون التابعون لهذا التثبيت. عند التفعيل يتم إنشاؤها فور إعداد التثبيت. تتم الإضافة فقط: ما هو موجود أصلًا يبقى كما هو.",
+  "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "عند الإيقاف، يمكنك إنشاؤها بنفسك لاحقًا في Admin → Users → الإعداد القياسي.",
+  "Voor deze installatie is er geen set van rollen en groepen.": "لا توجد مجموعة أدوار ومجموعات لهذا التثبيت."
 }

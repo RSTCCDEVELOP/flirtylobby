@@ -1716,7 +1716,8 @@ def presets_apply(request, key):
 
         if not themepacks.manifest_of(choice):
             return Response({"detail": "Dit thema bestaat niet."}, status=status.HTTP_400_BAD_REQUEST)
-    out = presets.apply(key, overwrite_pages=bool(request.data.get("overwrite_pages")), install_design=request.data.get("design") is not False, use_theme=choice != "keep", theme_choice=choice)
+    out = presets.apply(key, overwrite_pages=bool(request.data.get("overwrite_pages")), install_design=request.data.get("design") is not False, use_theme=choice != "keep", theme_choice=choice,
+                       access=(bool(request.data.get("access")) if "access" in request.data else None))  # the roles, groups and demo users: the choice of the question, else the setting of the installation
     __import__("apps.auditlog.service", fromlist=["log"]).log("installation.applied", request.user, target=key, request=request)
     return Response(out)
 

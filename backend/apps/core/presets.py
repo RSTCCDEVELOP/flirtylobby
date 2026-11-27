@@ -96,6 +96,44 @@ def setup_of(key):
     return {"users": not d.get("users_off"), "entity": not d.get("entity_off")}
 
 
+ACCESS_STEPS = ("roles", "groups", "grants", "enable_modules", "people")
+ACCESS_DEFAULT = {"roles": True, "groups": True, "grants": True, "enable_modules": False, "people": True}
+
+
+def access_of(key):
+    """Roles, user groups with their rights and demo users of an installation (tab Gebruikers en rechten): {auto, steps}. auto: they are made when the installation is set up (default: yes; the superadmin can switch it off, and the question before an installation is set up can switch it off for that run);
+    steps: which steps that follows (roles, groups, module access, switching on the modules that are needed, demo users), see apps/accounts/setups.py."""
+    d = edits(key).get("access") or {}
+    return {"auto": not d.get("auto_off"), "steps": {k: bool((d.get("steps") or {}).get(k, ACCESS_DEFAULT[k])) for k in ACCESS_STEPS}}
+
+
+def access_summary(key):
+    """What the set-up of this installation holds (for the tab): the groups with their roles and number of modules, the roles and the number of demo users. Never raises."""
+    try:
+        from apps.accounts import setups
+
+        if key not in setups.GROUPS:
+            return None
+        d = setups.describe(key)
+        return {"groups": [{"name": g["name"], "desc": g["desc"], "roles": g["roles"], "modules": len(g["modules"]), "people": len(g["people"])} for g in d["groups"]], "roles": [r["name"] for r in d["roles"]], "people": d["people"], "applied": d["applied"]}
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: the set-up of users and rights could not be read", key)
+        return None
+
+
+def access_brief(key):
+    """For the list of installations and the question before an installation is set: is there a set of roles, groups and demo users, is it on by default, and how big is it."""
+    try:
+        from apps.accounts import setups
+
+        if key not in setups.GROUPS:
+            return {"available": False, "auto": False}
+        g = setups.GROUPS[key]
+        return {"available": True, "auto": access_of(key)["auto"], "groups": len(g), "roles": len({r for x in g for r in x["roles"]}), "people": sum(len(x["people"]) for x in g)}
+    except Exception:  # noqa: BLE001
+        return {"available": False, "auto": False}
+
+
 def setup_flags():
     """The set-up options of the active installation (everything on when none is set)."""
     k = active()
@@ -156,7 +194,7 @@ def edit_options(key):
 
     ent = entity.kind_setting() if active() == key else {"kind": (edits(key).get("entity") or {}).get("kind") or base.get("entity_kind", entity.DEFAULT_KIND), "name": (edits(key).get("entity") or {}).get("name", "")}
     ent_out = {"kind": ent["kind"], "name": ent["name"], "default": base.get("entity_kind", entity.DEFAULT_KIND), "kinds": [{"key": k, "label": lb} for k, lb in entity.KINDS]}
-    return {"key": key, "name": base["name"], "setup": setup_of(key), "entity": ent_out, "modules": mods, "plugins": plugs, "pages": pages, "page_edits": pe, "edited": bool(edits(key)),
+    return {"key": key, "name": base["name"], "setup": setup_of(key), "access": {**access_of(key), "summary": access_summary(key)}, "entity": ent_out, "modules": mods, "plugins": plugs, "pages": pages, "page_edits": pe, "edited": bool(edits(key)),
             "demo": {"parts": [{"key": x, "label": DEMO_PARTS.get(x) or ("Demo van " + titles.get(x[7:], x[7:]) if x.startswith("plugin:") else x), "on": x not in dc["drop"]} for x in parts], "media": dc["media"], "heroes": dc["heroes"], "users": dc["users"]}}
 
 
@@ -202,6 +240,10 @@ def save_edits(key, body):
     if isinstance(body.get("setup"), dict):  # only what is switched OFF is kept (the default is on)
         st = body["setup"]
         out["setup"] = {**({"users_off": True} if st.get("users") is False else {}), **({"entity_off": True} if st.get("entity") is False else {})}
+    if isinstance(body.get("access"), dict):  # only what differs from the default is kept
+        ac = body["access"]
+        steps = {k: bool((ac.get("steps") or {}).get(k, ACCESS_DEFAULT[k])) for k in ACCESS_STEPS}
+        out["access"] = {**({"auto_off": True} if ac.get("auto") is False else {}), **({"steps": {k: v for k, v in steps.items() if v != ACCESS_DEFAULT[k]}} if any(v != ACCESS_DEFAULT[k] for k, v in steps.items()) else {})}
     if isinstance(body.get("entity"), dict):
         from . import entity
 
@@ -373,7 +415,7 @@ def listing():
     for base in PRESETS:
         p = get(base["key"])
         want = _wanted_modules(p)
-        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "samples": _design_samples(p["key"]), "design_pages": _design_count(p["key"]), "theme_pack": _theme_pack(p["key"]), "widgets": __import__("apps.core.preset_design", fromlist=["widget_keys"]).widget_keys(p["key"]), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+        out.append({"system_api": {"stripe": stripe_on}, "access": access_brief(p["key"]), "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "samples": _design_samples(p["key"]), "design_pages": _design_count(p["key"]), "theme_pack": _theme_pack(p["key"]), "widgets": __import__("apps.core.preset_design", fromlist=["widget_keys"]).widget_keys(p["key"]), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
                     "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
@@ -1049,9 +1091,10 @@ def bump_epoch():
     obj.save()
 
 
-def apply(key, preset=None, overwrite_pages=False, install_design=True, use_theme=True, theme_choice="standard"):
+def apply(key, preset=None, overwrite_pages=False, install_design=True, use_theme=True, theme_choice="standard", access=None):
     """Switch everything for this standard installation (or for a set made by the wizard: preset = {modules, plugins, theme}). Returns what happened.
     theme_choice: "standard" (the theme that is kept in the installation, tab Design; else only the community theme), "keep" (the colours stay as they are) or the key of a theme package of this website (another colour theme).
+    access: True / False = roles, groups and demo users of the installation are made / not made in this run (the question before the installation); None = what the installation says (tab Gebruikers en rechten).
     install_design=False: the pages of the installation (designed pages, saved pages and the pages of the tab Design) are not put in; use_theme=False: the community theme (colours) is not set.
     Pages that already have content are NOT replaced (overwrite_pages=True replaces them: only when the person said so, or on a site that is reset)."""
     from apps.plugins import runtime
@@ -1206,5 +1249,16 @@ def apply(key, preset=None, overwrite_pages=False, install_design=True, use_them
         so.sync()
     except Exception:  # noqa: BLE001
         pass
+    access_made = None
+    if key in BY_KEY:
+        try:  # roles, groups with their rights and demo users of this installation, when the superadmin switched that on (tab Gebruikers en rechten); the modules are on by now
+            ac = access_of(key)
+            if (ac["auto"] if access is None else bool(access)):
+                from apps.accounts import setups
+
+                if key in setups.GROUPS:
+                    access_made = setups.apply(key, ac["steps"])
+        except Exception:  # noqa: BLE001
+            logger.exception("Preset %s: its roles, groups and demo users could not be made", key)
     logger.warning("Standard installation %s applied", key)
-    return {"preset": key, "modules_on": sorted(want), "plugins_on": [n for n in need if n not in missing], "plugins_missing": missing, "plugins_installed": installed, "payments_warning": __import__("apps.core.payments_notice", fromlist=["x"]).notice_for(need), "theme": theme if "profiles" in want else None}
+    return {"preset": key, "access": access_made, "modules_on": sorted(want), "plugins_on": [n for n in need if n not in missing], "plugins_missing": missing, "plugins_installed": installed, "payments_warning": __import__("apps.core.payments_notice", fromlist=["x"]).notice_for(need), "theme": theme if "profiles" in want else None}

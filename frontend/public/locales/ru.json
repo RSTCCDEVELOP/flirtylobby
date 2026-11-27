@@ -9534,5 +9534,14 @@
   "Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed.": "Тема применена. Хотите, чтобы дизайнер также перекрасил дизайн, чтобы все цвета сочетались? Это расходует кредит ИИ.",
   "Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.": "Я выбрал другую цветовую тему. Перекрась текущий дизайн в новые цвета (блоки, кнопки, значки, акценты и изображения, где возможно). Сохрани страницы и тексты.",
   "Nee, zo laten": "Нет, оставить как есть",
-  "Opnieuw inkleuren": "Перекрасить"
+  "Opnieuw inkleuren": "Перекрасить",
+  "Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Готовый профиль ролей, групп пользователей с доступом к модулям и демо-пользователей для этой установки. Добавляется только новое: то, что уже есть, остаётся как есть.",
+  "Het profiel van rollen, groepen en demo-gebruikers van deze installatie wordt gemaakt zodra hij wordt ingesteld. Kies de stappen op het tabblad Gebruikers en rechten.": "Профиль ролей, групп и демо-пользователей этой установки создаётся сразу после её настройки. Выберите шаги на вкладке «Пользователи и права».",
+  "Maken bij het instellen van deze installatie": "Создавать при настройке этой установки",
+  "Opgeslagen. De rollen, groepen en rechten worden gemaakt zodra deze installatie wordt ingesteld.": "Сохранено. Роли, группы и права будут созданы сразу после настройки этой установки.",
+  "Rechten en groepen meenemen bij de installatie": "Включить права и группы в установку",
+  "Rollen, groepen en rechten meemaken": "Создавать также роли, группы и права",
+  "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Роли, группы с доступом к модулям и демо-пользователи, относящиеся к этой установке. Если включено, они создаются сразу после настройки установки. Добавляется только новое: то, что уже есть, остаётся как есть.",
+  "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "Если выключено, вы сможете создать их позже самостоятельно в разделе Admin → Users → Стандартная настройка.",
+  "Voor deze installatie is er geen set van rollen en groepen.": "Для этой установки нет набора ролей и групп."
 }

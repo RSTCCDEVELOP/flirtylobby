@@ -9534,5 +9534,14 @@
   "Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed.": "主题已应用。是否让设计师也重新为设计配色，使所有颜色保持一致？这会消耗 AI 额度。",
   "Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.": "我选择了另一个配色主题。请用新的颜色重新为当前设计配色（尽可能包括区块、按钮、图标、强调色和图片）。保留页面和文字。",
   "Nee, zo laten": "不，保持原样",
-  "Opnieuw inkleuren": "重新配色"
+  "Opnieuw inkleuren": "重新配色",
+  "Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "为此安装提供开箱即用的配置：角色、可访问模块的用户组和演示用户。只会新增内容：已有的内容保持不变。",
+  "Het profiel van rollen, groepen en demo-gebruikers van deze installatie wordt gemaakt zodra hij wordt ingesteld. Kies de stappen op het tabblad Gebruikers en rechten.": "此安装的角色、用户组和演示用户配置会在安装设置完成后立即创建。请在“用户和权限”选项卡中选择步骤。",
+  "Maken bij het instellen van deze installatie": "设置此安装时创建",
+  "Opgeslagen. De rollen, groepen en rechten worden gemaakt zodra deze installatie wordt ingesteld.": "已保存。角色、用户组和权限将在此安装设置完成后立即创建。",
+  "Rechten en groepen meenemen bij de installatie": "安装时包含权限和用户组",
+  "Rollen, groepen en rechten meemaken": "同时创建角色、用户组和权限",
+  "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "属于此安装的角色、可访问模块的用户组和演示用户。开启后，它们会在安装设置完成后立即创建。只会新增内容：已有的内容保持不变。",
+  "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "关闭后，你可以稍后在 Admin → Users → 标准设置 中自行创建。",
+  "Voor deze installatie is er geen set van rollen en groepen.": "此安装没有角色和用户组的预设。"
 }

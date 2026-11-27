@@ -9534,5 +9534,14 @@
   "Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed.": "テーマを適用しました。すべての色が合うように、デザイナーにデザインも塗り直してもらいますか？AIクレジットを使用します。",
   "Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.": "別のカラーテーマを選びました。現在のデザインを新しい色で塗り直してください（可能な限り、ブロック、ボタン、アイコン、アクセント、画像も）。ページとテキストはそのままにしてください。",
   "Nee, zo laten": "いいえ、そのままにする",
-  "Opnieuw inkleuren": "塗り直す"
+  "Opnieuw inkleuren": "塗り直す",
+  "Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "このインストール用の、ロール、モジュールへのアクセス権を持つユーザーグループ、デモユーザーからなる、すぐに使えるプロファイルです。追加のみ行われ、すでにあるものはそのまま残ります。",
+  "Het profiel van rollen, groepen en demo-gebruikers van deze installatie wordt gemaakt zodra hij wordt ingesteld. Kies de stappen op het tabblad Gebruikers en rechten.": "このインストールのロール、グループ、デモユーザーのプロファイルは、セットアップされた時点で作成されます。「ユーザーと権限」タブでステップを選択してください。",
+  "Maken bij het instellen van deze installatie": "このインストールのセットアップ時に作成",
+  "Opgeslagen. De rollen, groepen en rechten worden gemaakt zodra deze installatie wordt ingesteld.": "保存しました。ロール、グループ、権限は、このインストールがセットアップされた時点で作成されます。",
+  "Rechten en groepen meenemen bij de installatie": "インストール時に権限とグループを含める",
+  "Rollen, groepen en rechten meemaken": "ロール、グループ、権限も作成する",
+  "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "このインストールに属するロール、モジュールへのアクセス権を持つグループ、デモユーザーです。オンの場合、インストールのセットアップ時に作成されます。追加のみ行われ、すでにあるものはそのまま残ります。",
+  "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "オフの場合は、後で Admin → Users → 標準セットアップ から自分で作成できます。",
+  "Voor deze installatie is er geen set van rollen en groepen.": "このインストールにはロールとグループのセットがありません。"
 }

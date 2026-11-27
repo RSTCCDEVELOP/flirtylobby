@@ -9534,5 +9534,14 @@
   "Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed.": "Le thème a été appliqué. Voulez-vous que le designer recolorie aussi le design, pour que toutes les couleurs correspondent ? Cela utilise du crédit IA.",
   "Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.": "J'ai choisi un autre thème de couleurs. Recolorie le design actuel avec les nouvelles couleurs (blocs, boutons, icônes, accents et images si possible). Conserve les pages et les textes.",
   "Nee, zo laten": "Non, laisser tel quel",
-  "Opnieuw inkleuren": "Recolorier"
+  "Opnieuw inkleuren": "Recolorier",
+  "Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Un profil prêt à l'emploi de rôles, de groupes d'utilisateurs avec accès aux modules et d'utilisateurs de démo pour cette installation. Seuls des ajouts sont faits : ce qui existe déjà reste tel quel.",
+  "Het profiel van rollen, groepen en demo-gebruikers van deze installatie wordt gemaakt zodra hij wordt ingesteld. Kies de stappen op het tabblad Gebruikers en rechten.": "Le profil de rôles, de groupes et d'utilisateurs de démo de cette installation est créé dès qu'elle est configurée. Choisissez les étapes dans l'onglet Utilisateurs et droits.",
+  "Maken bij het instellen van deze installatie": "Créer lors de la configuration de cette installation",
+  "Opgeslagen. De rollen, groepen en rechten worden gemaakt zodra deze installatie wordt ingesteld.": "Enregistré. Les rôles, groupes et droits seront créés dès que cette installation sera configurée.",
+  "Rechten en groepen meenemen bij de installatie": "Inclure les droits et groupes dans l'installation",
+  "Rollen, groepen en rechten meemaken": "Créer aussi les rôles, groupes et droits",
+  "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Rôles, groupes avec accès aux modules et utilisateurs de démo qui font partie de cette installation. Si cette option est activée, ils sont créés dès que l'installation est configurée. Seuls des ajouts sont faits : ce qui existe déjà reste tel quel.",
+  "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "Si cette option est désactivée, vous pourrez les créer vous-même plus tard dans Admin → Users → Configuration standard.",
+  "Voor deze installatie is er geen set van rollen en groepen.": "Il n'y a pas de jeu de rôles et de groupes pour cette installation."
 }

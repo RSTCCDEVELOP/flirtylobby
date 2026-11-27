@@ -5345,3 +5345,22 @@ html[data-adm-credit="off"] .site-credit { display: none; }
 .group-tile .tile-count { margin-top: auto; align-self: flex-start; padding: .2rem .7rem; border-radius: 999px; font-size: .78rem; font-weight: 700; color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, transparent); }
 /* with the side panel of the page editor the size and place of a picture are set in the panel (Afbeelding: formaat, uitlijnen): the bar on every picture on the page is gone */
 html[data-pbbar="1"] .img-place-bar { display: none !important; }
+
+/* ── Settings of a standard installation (pop-up with tabs): wider, switches and cards in columns, compact ── */
+.modal.pgs { width: min(760px, 96vw); max-width: 760px; }  /* (.modal has a maximum of 560px: wider here, so the switches and cards stand in columns) */
+.pgs .pgs-body { gap: .9rem; }
+.pgs-cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: .55rem; align-items: stretch; }
+.pgs-cols > .sec-toggle { margin: 0; align-items: flex-start; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--blue) 5%, var(--card)); }
+.pgs-cols > .sec-toggle.pgs-main { grid-column: 1 / -1; background: color-mix(in srgb, var(--blue) 9%, var(--card)); }
+.pgs-card { display: grid; gap: .15rem; align-content: start; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--blue) 5%, var(--card)); min-width: 0; }
+.pgs-card small { font-size: .78rem; }
+.pgs .wz-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: .55rem; }
+.pgs .wz-q { padding: .6rem .8rem; gap: .7rem; }
+.pgs .wz-q .wz-text small { font-size: .78rem; line-height: 1.3; }
+.pgs .chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.pgs h3 { font-size: 1rem; }
+.pgs p, .pgs small, .pgs .wz-text, .pgs-card small { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }  /* the texts in the pop-up are justified */
+.pgs .badge, .pgs .chips, .pgs h3, .pgs strong { text-align: left; }
+/* a switch with a text (a card with a title and a description) always sits at the top, next to the title: not in the middle of a tall card */
+label:has(> .switch):has(small), label:has(> .switch):has(.muted), label.mod-card:has(.switch) { align-items: flex-start !important; }
+label:has(> .switch):has(small) > .switch, label:has(> .switch):has(.muted) > .switch { margin-top: .1rem; flex: none; }

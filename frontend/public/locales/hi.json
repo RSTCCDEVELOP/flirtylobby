@@ -9534,5 +9534,14 @@
   "Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed.": "थीम लागू हो गई है। क्या आप चाहते हैं कि डिज़ाइनर डिज़ाइन को भी दोबारा रंगे, ताकि सभी रंग मेल खाएँ? इसमें AI क्रेडिट लगता है।",
   "Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.": "मैंने दूसरी रंग थीम चुनी है। मौजूदा डिज़ाइन को नए रंगों से दोबारा रंगो (जहाँ संभव हो ब्लॉक, बटन, आइकन, एक्सेंट और चित्र)। पेज और टेक्स्ट वैसे ही रखो।",
   "Nee, zo laten": "नहीं, ऐसे ही रहने दें",
-  "Opnieuw inkleuren": "दोबारा रंगें"
+  "Opnieuw inkleuren": "दोबारा रंगें",
+  "Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "इस इंस्टॉलेशन के लिए भूमिकाओं, मॉड्यूल तक पहुँच वाले यूज़र ग्रुप और डेमो उपयोगकर्ताओं की उपयोग के लिए तैयार प्रोफ़ाइल। केवल जोड़ा जाता है: जो पहले से मौजूद है वह जैसा है वैसा ही रहता है।",
+  "Het profiel van rollen, groepen en demo-gebruikers van deze installatie wordt gemaakt zodra hij wordt ingesteld. Kies de stappen op het tabblad Gebruikers en rechten.": "इस इंस्टॉलेशन की भूमिकाओं, ग्रुप और डेमो उपयोगकर्ताओं की प्रोफ़ाइल सेट अप होते ही बन जाती है। उपयोगकर्ता और अधिकार टैब में चरण चुनें।",
+  "Maken bij het instellen van deze installatie": "इस इंस्टॉलेशन को सेट अप करते समय बनाएँ",
+  "Opgeslagen. De rollen, groepen en rechten worden gemaakt zodra deze installatie wordt ingesteld.": "सहेजा गया। भूमिकाएँ, ग्रुप और अधिकार इस इंस्टॉलेशन के सेट अप होते ही बन जाएँगे।",
+  "Rechten en groepen meenemen bij de installatie": "इंस्टॉलेशन के साथ अधिकार और ग्रुप शामिल करें",
+  "Rollen, groepen en rechten meemaken": "भूमिकाएँ, ग्रुप और अधिकार भी बनाएँ",
+  "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "इस इंस्टॉलेशन से जुड़ी भूमिकाएँ, मॉड्यूल तक पहुँच वाले ग्रुप और डेमो उपयोगकर्ता। चालू होने पर, इंस्टॉलेशन के सेट अप होते ही ये बन जाते हैं। केवल जोड़ा जाता है: जो पहले से मौजूद है वह जैसा है वैसा ही रहता है।",
+  "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "बंद होने पर, आप इन्हें बाद में Admin → Users → स्टैंडर्ड सेटअप में खुद बना सकते हैं।",
+  "Voor deze installatie is er geen set van rollen en groepen.": "इस इंस्टॉलेशन के लिए भूमिकाओं और ग्रुप का कोई सेट नहीं है."
 }

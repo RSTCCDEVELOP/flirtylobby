@@ -67,7 +67,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
     }
     let packs = [];
     try { packs = ((await api("/theme/packs/")).packs || []).filter((t) => t.enabled !== false && !t.key.startsWith("inst-")); } catch {}
-    setAsk({ p, needs, demo: needs, shops: "clothing", packs, themeChoice: "standard" });
+    setAsk({ p, needs, demo: needs, shops: "clothing", packs, themeChoice: "standard", access: !!p.access?.auto });
   };
   // Pages that already have content are never replaced without asking: the answer "Nee, behouden" keeps every page as it is
   const askOverwrite = async (key) => {
@@ -117,7 +117,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
     const overwrite = design ? await askOverwrite(p.key) : false;
     setRun({ title: tx("Installatie \"{0}\" instellen", p.name), steps: [{ key: "_apply", label: tx("Modules, plugins en thema instellen"), status: "busy" }], error: "", done: false, undo: p.key });
     try {
-      const r = await api(`/system/presets/${p.key}/apply/`, { method: "POST", body: { overwrite_pages: overwrite, design, theme } });
+      const r = await api(`/system/presets/${p.key}/apply/`, { method: "POST", body: { overwrite_pages: overwrite, design, theme, ...(p.access?.available ? { access: ask.access === true } : {}) } });
       let note = tx("{0} is ingesteld: {1} modules en {2} plugins staan aan.", p.name, r.modules_on.length, r.plugins_on.length) + (r.payments_warning ? ` ${tx(r.payments_warning)}` : "") + (r.plugins_installed?.length ? ` ${tx("Uit de bibliotheek geïnstalleerd:")} ${r.plugins_installed.join(", ")}.` : "") + (r.plugins_missing.length ? ` ${tx("Niet geïnstalleerd:")} ${r.plugins_missing.join(", ")}.` : "");
       setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.key === "_apply" ? { ...st, status: "ok" } : st)) }));
       let ok = true;
@@ -181,6 +181,12 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
               </select>
               <small className="muted">{tx("Kies met welke kleuren, lettertypen en vormen de website wordt ingesteld.")}</small>
             </label>
+            {ask.p.access?.available && (
+              <label className="check sec-toggle">
+                <span className="switch"><input type="checkbox" checked={ask.access === true} onChange={(e) => setAsk({ ...ask, access: e.target.checked })} /><span /></span>
+                <span>{tx("Rollen, groepen en rechten meemaken")} <small className="muted">{tx("Een gebruiksklaar profiel van rollen, user groups met toegang tot modules en demo-gebruikers voor deze installatie. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.")} {ask.p.access.groups} {tx("groepen")} · {ask.p.access.roles} {tx("rollen")} · {ask.p.access.people} {tx("gebruikers")}</small></span>
+              </label>
+            )}
             {demo && (
               <label className="check sec-toggle">
                 <span className="switch"><input type="checkbox" checked={ask.demo} onChange={(e) => setAsk({ ...ask, demo: e.target.checked })} /><span /></span>
