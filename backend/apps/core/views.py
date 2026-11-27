@@ -2930,6 +2930,18 @@ def sitecreator_catalog(request):
 
 @api_view(["GET"])
 @permission_classes(DESIGN_PERM)
+def sitecreator_widget_doc(request, key):
+    """The html document of a widget, with the options of the website (or its example), so the preview of the creator can show the widget working."""
+    from apps.sysobjects import widgets
+
+    if not widgets.manifest(key):
+        return Response({"detail": "Onbekende widget."}, status=404)
+    have = widgets.installed().get(key)
+    return Response({"doc": widgets.doc(key, have.options if have else None, example=not have)})
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
 def sitecreator_theme_brief(request):
     """?key=<theme>: the colours, fonts and corners of a theme as design conditions for the AI prompt (also a theme of the library that is not installed)."""
     from . import sitecreator
@@ -3018,7 +3030,7 @@ def sitecreator_generate(request, pk):
         return _gone()
     try:
         d = request.data if isinstance(request.data, dict) else {}
-        sitecreator.generate(job, improve=bool(d.get("improve")), focus=str(d.get("focus") or ""))
+        sitecreator.generate(job, improve=bool(d.get("improve")), focus=str(d.get("focus") or ""), redo=bool(d.get("redo")))
     except ValueError as e:
         return _bad(str(e))
     job.refresh_from_db()
@@ -3603,6 +3615,23 @@ def sitecreator_own_media(request, pk):
         return Response(sitecreator.public(sitecreator.add_own_media(job, request.data.get("media"), "logo" if request.data.get("role") == "logo" else "media")))
     except ValueError as e:
         return _bad(str(e))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_sections(request, pk):
+    """POST {"file": "index.html", "delete": [2, 5]}: parts of a page of the design are taken out (no AI, no credit)."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    d = request.data if isinstance(request.data, dict) else {}
+    try:
+        job = sitecreator.delete_sections(job, d.get("file"), d.get("delete"))
+    except ValueError as e:
+        return _bad(str(e))
+    return Response(sitecreator.public(job, files=True))
 
 
 @api_view(["POST"])

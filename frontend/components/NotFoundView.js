@@ -10,6 +10,7 @@ import Movable from "./Movable";
 import PageBlocks from "./PageBlocks";
 import SiteFooter from "./SiteFooter";
 import SiteHeader from "./SiteHeader";
+import SystemPageMark from "./SystemPageMark";
 import Link from "next/link";
 
 const TITLE = { nl: "Pagina niet gevonden", en: "Page not found", de: "Seite nicht gefunden", fr: "Page introuvable", es: "Página no encontrada", pt: "Página não encontrada", zh: "页面未找到", ar: "الصفحة غير موجودة" };
@@ -28,6 +29,8 @@ const HOME = { nl: "Naar de startpagina", en: "Go to the home page", de: "Zur St
 // The page for a wrong address (404). Title and text can be changed in edit mode, per language (Admin -> Pagina's -> 404).
 export default function NotFoundView() {
   return (
+    <>
+      <SystemPageMark />
     <div className="site">
       <SiteHeader />
       <main className="doc">
@@ -41,5 +44,6 @@ export default function NotFoundView() {
       </main>
       <SiteFooter />
     </div>
+    </>
   );
 }

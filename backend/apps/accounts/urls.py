@@ -8,7 +8,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import fakeusers, invitations, payment_views, pwreset, registration, rights_views, setups, sso, views
+from . import fakeusers, invitations, payment_views, pwreset, registration, rights_views, setups, sso, tilecounts, views
 
 router = DefaultRouter()
 router.register("users", views.UserViewSet, basename="users")
@@ -24,6 +24,7 @@ urlpatterns = [
     path("rights/record/<str:plugin>/<str:model>/<str:pk>/", rights_views.record_rights),
     path("users/fake/", fakeusers.fake_users),
     path("access-setups/", setups.setups),
+    path("tile-counts/", tilecounts.tile_counts),
     path("users/<int:pk>/payments/", payment_views.user_payments),
     path("users/<int:pk>/payments/reveal/", payment_views.user_payments_reveal),
     path("users/<int:pk>/payments/settle/", payment_views.user_account_settle),

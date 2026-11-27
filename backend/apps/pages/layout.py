@@ -190,9 +190,10 @@ def _cell_style(st):
     if not isinstance(st, dict):
         return {}
     out = {}
-    for k in ("bg", "border"):
-        if HEX.fullmatch(str(st.get(k) or "")):
-            out[k] = st[k]
+    if _col(st.get("bg")):  # a colour of the theme (it follows the light and the dark mode) or an own colour
+        out["bg"] = st["bg"]
+    if HEX.fullmatch(str(st.get("border") or "")):
+        out["border"] = st["border"]
     for k, hi in (("radius", 60), ("pad", 80)):
         try:
             if st.get(k) not in (None, ""):

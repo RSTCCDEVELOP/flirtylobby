@@ -11,7 +11,7 @@ import ColorInput from "../../../../components/ColorInput";
 import AiCreditAlert from "../../../../components/AiCreditAlert";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { IconBolt, IconCamera, IconCheck, IconChat, IconEdit, IconImage, IconMenu, IconPalette, IconPlus, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
+import { IconBolt, IconCamera, IconCheck, IconChat, IconEdit, IconGrid, IconImage, IconRefresh, IconMenu, IconPalette, IconPlus, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
 import { api, apiBase, apiUpload, errorText, getToken, mediaUrl } from "../../../../lib/api";
 import { useBusy } from "../../../../lib/busy";
@@ -28,6 +28,9 @@ import { loadKit } from "../../../../lib/ui-kit/kitDoc";
 import Wizard from "./DesignWizard";
 import { BRIEF_STEPS, BriefStep, briefFilled, briefToText } from "./briefWizard";
 import StartPlanPopup from "./StartWizard";
+import PartsPicker, { partName, partsOf } from "./PartsPicker";
+import PreviewWidgets from "./PreviewWidgets";
+import SectionTools from "./SectionTools";
 import { planAsked, planDone, useAiWelcomeOpen, stopWizardLoading } from "../../../../lib/planFlag";
 
 export { ModulePicker, previewHtml };
@@ -297,6 +300,24 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
   );
 }
 
+// Redo or improve: with a design that exists the customer chooses between a new design from the current data and an improvement of what is there.
+function RedoPopup({ onClose, onNew, onImprove, onFocus, busy }) {
+  return createPortal(
+    <div className="pb-objback" style={{ zIndex: 1300 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="pb-objpop" role="dialog" aria-label={tx("Ontwerpen")} style={{ width: "min(620px, 94vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }} data-easy2edit-tag="ui-redo-popup">
+        <div className="pb-objhead"><strong>{tx("Ontwerpen")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
+        <div style={{ padding: "1rem 1.3rem 1.3rem", display: "grid", gap: ".9rem" }}>
+          <div className="setup-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+            <button type="button" className="setup-tile" disabled={busy} onClick={onNew}><strong><IconRefresh /> {tx("Opnieuw ontwerpen")}</strong><small className="muted">{tx("Een helemaal nieuw ontwerp met de huidige gegevens: naam, kleuren, pagina's, foto's en onderdelen. Je huidige ontwerp kun je terugzetten met Vorige versie terugzetten.")}</small></button>
+            <button type="button" className="setup-tile" disabled={busy} onClick={onImprove}><strong><IconBolt /> {tx("Huidig ontwerp verbeteren")}</strong><small className="muted">{tx("De pagina's blijven zoals ze zijn. De ontwerper verwerkt je huidige instellingen (kleuren, foto's en onderdelen) in het bestaande ontwerp, in de chat.")}</small></button>
+            <button type="button" className="setup-tile" disabled={busy} onClick={onFocus}><strong><IconCheck /> {tx("Verbeteren met aandachtspunten")}</strong><small className="muted">{tx("Kies waar de AI op moet letten, bijvoorbeeld opmaak, teksten of mobiel: alleen dat wordt verbeterd.")}</small></button>
+          </div>
+          <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn" onClick={onClose}>{tx("Annuleren")}</button></div>
+        </div>
+      </div>
+    </div>, document.body);
+}
+
 // Improve: starts the improvement of the design as it is now, with the points that the user wants Claude to look at.
 const FOCUS = [["Opmaak en kleuren", "the visual design and colours"], ["Teksten", "the texts (clear, concrete, no filler)"], ["Mobiel", "the layout on a phone"], ["Toegankelijkheid", "accessibility and contrast"], ["Structuur voor de pagina-editor", "the structure (sections, one container per section, clean cards) so that it imports well into the page editor"]];
 function ImprovePopup({ onClose, onStart, busy }) {
@@ -485,11 +506,16 @@ const SourceSelect = ({ value, onChange, style }) => !FREE_ON || !freeList().len
 
 function Fold({ title, defaultOpen, children, shut, listen }) {
   const [open, setOpen] = useState(!!defaultOpen);
-  useEffect(() => { if (!listen) return undefined; const f = () => setOpen(true); window.addEventListener(`creator-open-${listen}`, f); return () => window.removeEventListener(`creator-open-${listen}`, f); }, [listen]);  // a message in the chat can open this block
+  const me = useRef(Math.random().toString(36).slice(2));
+  // only ONE block is open at a time (room): opening one folds the others away
+  const show = () => { setOpen(true); window.dispatchEvent(new CustomEvent("creator-fold", { detail: me.current })); };
+  useEffect(() => { const f = (e) => { if (e.detail !== me.current) setOpen(false); }; window.addEventListener("creator-fold", f); return () => window.removeEventListener("creator-fold", f); }, []);
+  useEffect(() => { if (defaultOpen) window.dispatchEvent(new CustomEvent("creator-fold", { detail: me.current })); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!listen) return undefined; const f = () => show(); window.addEventListener(`creator-open-${listen}`, f); return () => window.removeEventListener(`creator-open-${listen}`, f); }, [listen]);  // eslint-disable-line react-hooks/exhaustive-deps -- a message in the chat can open the block
   useEffect(() => { if (shut) setOpen(false); }, [shut]);  // while the AI is making the pages the block folds itself away
-  const toggle = () => setOpen((o) => !o);
+  const toggle = () => (open ? setOpen(false) : show());
   return (
-    <div data-easy2edit-tag="ui-fold" style={{ borderTop: "1px solid var(--line)", display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, maxHeight: open ? "45%" : "none", flex: "none" }}>
+    <div data-easy2edit-tag="ui-fold" style={{ margin: ".4rem .7rem 0", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, maxHeight: open ? "45%" : "none", flex: "none" }}>
       <div role="button" tabIndex={0} aria-expanded={open} onClick={toggle} onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(); } }}
         style={{ cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: ".4rem", padding: ".5rem .8rem", background: "var(--blue)", color: "#fff", userSelect: "none", flex: "none" }}>
         {title}
@@ -1184,7 +1210,7 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
                   </button>))}
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: ".6rem", fontSize: ".85rem" }}>
-                <ColorInput value={ans[bgOpen === "page" ? "page_bg" : "front_bg"] || shown[bgOpen]} onChange={(e) => pickColor(bgOpen, e.target.value, false)} aria-label={tx("Eigen kleur")} style={{ width: 44, height: 32, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
+                <ColorInput value={ans[bgOpen === "page" ? "page_bg" : "front_bg"] || shown[bgOpen]} onChange={(e) => pickColor(bgOpen, e.target.value, false)} aria-label={tx("Eigen kleur")} style={{ width: 44, height: 32, padding: 0, border: "1px solid var(--line)", borderRadius: 6, cursor: "pointer" }} />
                 <span>{tx("Eigen kleur")}</span>
                 <button type="button" className="btn sm" style={{ marginLeft: "auto" }} onClick={() => { const t = bgOpen; const v = choicesFor(t)[0]?.[0]; setBgOpen(""); if (v) pickColor(t, v, false); }}>{tx("Standaard")}</button>
               </label>
@@ -1201,8 +1227,96 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
   );
 }
 
+// The system parts of the design (components, system objects, widgets): a block like Colours. The chosen ones are listed, with a way to take one away and a button for the picker.
+function PartsBlock({ job, catalog, onOpen, onChange }) {
+  const b = job.brief || {};
+  const list = partsOf(b);
+  const running = job.status === "running" || job.status === "stopping";
+  return (
+    <Fold shut={running} defaultOpen={list.length > 0} title={<><IconGrid /> {tx("Objecten")} <span className={list.length ? "badge ok" : "badge"}>{list.length}</span></>}>
+      <div style={{ display: "grid", gap: ".6rem", marginTop: ".3rem" }} data-easy2edit-tag="ui-parts-block">
+        <small className="muted">{tx("Componenten, systeemobjecten en widgets die in je website moeten zitten. De ontwerper neemt ze mee en installeert wat nodig is.")}</small>
+        {list.length > 0 && (
+          <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>
+            {list.map((slug) => (
+              <span key={slug} className="badge" style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".25rem .5rem", borderRadius: 8, border: "1px solid var(--line)" }}>
+                {partName(slug, catalog)}
+                <button type="button" className="acl-x" style={{ width: "1.3rem", height: "1.3rem", fontSize: "1rem" }} disabled={running} onClick={() => onChange({ components: (b.components || []).filter((x) => x !== slug), objects: (b.objects || []).filter((x) => x !== slug), plugins_use: (b.plugins_use || []).filter((x) => x !== slug) })} aria-label={`${tx("Verwijder")} ${partName(slug, catalog)}`}>×</button>
+              </span>
+            ))}
+          </div>
+        )}
+        <button type="button" className="btn sm" style={{ justifySelf: "start" }} disabled={running} onClick={onOpen}><IconPlus /> {tx("Toevoegen")}</button>
+      </div>
+    </Fold>
+  );
+}
+
 // The theme of the design: colours, font, corners and light/dark. The system writes it as the theme on :root of the pages, so the pages follow at once without asking the AI again, and it is the same theme that the website gets when it is made.
-function ThemeBlock({ job, onChanged }) {
+// Another colour theme in the block Colours: a button with the theme that is used now; it opens a pop-up with the themes of the system as cards (tabs: all, light, dark). One click gives the design the colours of that theme
+// (a theme that is not installed yet is installed). Not a scroll list in the block.
+const lumOf = (h) => { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || "")); if (!m) return 1; const c = [0, 2, 4].map((i) => { const x = parseInt(m[1].substr(i, 2), 16) / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+function ThemePicker({ job, onChanged, onRecolor }) {
+  const [list, setList] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState("all");
+  const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
+  const b = job.brief || {};
+  useEffect(() => { api("/sitecreator/theme-library/").then((d) => setList((d.themes || []).filter((t) => t.colors?.primary))).catch(() => setList([])); }, []);
+  const choose = async (t) => {
+    if (busy) return;
+    if (b.theme_name === t.name) { setOpen(false); return; }
+    setBusy(t.key); setErr("");
+    try {
+      await api(`/sitecreator/${job.id}/theme-apply/`, { method: "POST", body: { key: t.key } });
+      await onChanged?.();   // the pages and the fields below get the colours of the theme at once
+      setOpen(false);
+      if (onRecolor && (await confirmDialog(tx("Het thema is toegepast. Wil je dat de ontwerper het ontwerp ook opnieuw inkleurt, zodat alle kleuren kloppen? Dit gebruikt AI-tegoed."), { okLabel: tx("Opnieuw inkleuren"), cancelLabel: tx("Nee, zo laten") }))) onRecolor(t.name);
+    } catch (e) { setErr(errorText(e)); } finally { setBusy(""); }
+  };
+  if (!list || !list.length) return null;
+  const cur = list.find((t) => t.name === b.theme_name);
+  const bars = (c) => [c.light_bg, c.primary, c.secondary, c.light_text];
+  const shown = list.filter((t) => tab === "all" || (tab === "dark") === (lumOf(t.colors?.light_bg) < 0.2));
+  return (
+    <div style={{ display: "grid", gap: ".35rem" }} data-easy2edit-tag="ui-theme-picker">
+      <strong style={{ fontSize: ".85rem" }}>{tx("Kleurenthema")}</strong>
+      <button type="button" className="btn" onClick={() => { setErr(""); setOpen(true); }} style={{ display: "flex", alignItems: "center", gap: ".6rem", justifyContent: "flex-start", textAlign: "left" }} aria-haspopup="dialog">
+        <span aria-hidden="true" style={{ display: "flex", height: 20, width: 64, borderRadius: 5, overflow: "hidden", border: "1px solid var(--line)", flex: "none" }}>
+          {bars(cur?.colors || b.colors || {}).map((x, i) => <i key={i} style={{ flex: 1, background: x || "#ccc" }} />)}
+        </span>
+        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cur?.name || tx("Eigen kleuren")}</span>
+        <small className="muted">{tx("Ander thema kiezen")}</small>
+      </button>
+      {open && createPortal(
+        <div className="pb-objback" style={{ zIndex: 1300 }} onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) setOpen(false); }}>
+          <div className="pb-objpop" role="dialog" aria-label={tx("Kleurenthema")} style={{ width: "min(760px, 94vw)", maxHeight: "86vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div className="pb-objhead"><strong>{tx("Kleurenthema")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" disabled={!!busy} onClick={() => setOpen(false)} aria-label={tx("Sluiten")}>×</button></div>
+            <div style={{ padding: "1rem 1.3rem 1.3rem", display: "grid", gap: ".9rem", minHeight: 0, overflowY: "auto" }}>
+              <Tabs value={tab} onChange={setTab} tabs={[["all", "Alle thema's", null, list.length], ["light", "Licht"], ["dark", "Donker"]]} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: ".7rem" }}>
+                {shown.map((t) => { const c = t.colors || {}, on = b.theme_name === t.name; return (
+                  <button key={t.key} type="button" disabled={!!busy} aria-pressed={on} onClick={() => choose(t)} title={t.description || t.name}
+                    style={{ display: "grid", gap: ".4rem", alignContent: "start", textAlign: "left", padding: ".6rem", borderRadius: 12, border: on ? "2px solid var(--blue)" : "1px solid var(--line)", background: "var(--card)", color: "inherit", cursor: busy ? "wait" : "pointer", minWidth: 0, font: "inherit" }}>
+                    <span aria-hidden="true" style={{ display: "flex", height: 34, borderRadius: 8, overflow: "hidden", border: "1px solid var(--line)" }}>
+                      {bars(c).map((x, i) => <i key={i} style={{ flex: 1, background: x || "#ccc" }} />)}
+                    </span>
+                    <strong style={{ fontSize: ".85rem", lineHeight: 1.2 }}>{t.name}{busy === t.key ? ` · ${tx("Bezig…")}` : ""}</strong>
+                    {t.description && <small className="muted" style={{ lineHeight: 1.25 }}>{t.description}</small>}
+                    {!t.installed && !on && <small className="muted">{tx("wordt geïnstalleerd als je hem kiest")}</small>}
+                  </button>); })}
+              </div>
+              {!shown.length && <p className="muted" style={{ margin: 0 }}>{tx("Niets gevonden.")}</p>}
+              {err && <div className="alert" role="alert">{err}</div>}
+            </div>
+          </div>
+        </div>, document.body)}
+    </div>
+  );
+}
+
+function ThemeBlock({ job, onChanged, onRecolor }) {
   const b = job.brief || {};
   const [vals, setVals] = useState({ colors: { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...(b.colors || {}) }, font: b.font || "sans", radius: b.radius ?? 14, max_width: b.max_width ?? 1100, color_mode: b.color_mode || "light" });
   const [busy, setBusy] = useState(false);
@@ -1221,12 +1335,13 @@ function ThemeBlock({ job, onChanged }) {
         {busy && <small style={{ opacity: .85 }}>· {tx("Bezig…")}</small>}
       </>}>
       <div style={{ display: "grid", gap: ".6rem", marginTop: ".5rem" }}>
+        <ThemePicker job={job} onChanged={onChanged} onRecolor={onRecolor} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".45rem .8rem" }}>
           {roles.map(([k, l]) => (
             <div key={k} style={{ display: "grid", gap: ".25rem", fontSize: ".85rem", minWidth: 0 }}>
               <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(l)}</span>
               <span style={{ display: "flex", alignItems: "center", gap: ".4rem", minWidth: 0 }}>
-                <ColorInput value={vals.colors[k] || "#000000"} onChange={(e) => setColor(k, e.target.value)} aria-label={tx(l)} style={{ flex: "none", width: 34, height: 28, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
+                <ColorInput value={vals.colors[k] || "#000000"} onChange={(e) => setColor(k, e.target.value)} aria-label={tx(l)} style={{ flex: "none", width: 34, height: 28, padding: 0, border: "1px solid var(--line)", borderRadius: 6, cursor: "pointer" }} />
                 <HexField value={vals.colors[k] || ""} onChange={(v) => setColor(k, v)} label={`${tx(l)} (${tx("hex-code")})`} />
               </span>
             </div>
@@ -1294,6 +1409,20 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const [shots, setShots] = useState([]);  // screenshots of the preview that go along with the next message to the designer
   const [shooting, setShooting] = useState(false);
   const upIn = useRef(null);
+  const [prevLoads, setPrevLoads] = useState(0);   // counts the loads of the preview frame (the widgets on top of it look again)
+  const [plus, setPlus] = useState(false);          // the menu of the +: pictures or PDF, or system parts
+  const [parts, setParts] = useState(false);        // the picker of components, system objects and widgets
+  const [partCat, setPartCat] = useState(null);     // the catalogue it picks from
+  useEffect(() => { if (!partCat && ((job?.brief?.components || []).length || (job?.brief?.objects || []).length || (job?.brief?.plugins_use || []).length)) api("/sitecreator/catalog/").then(setPartCat).catch(() => {}); }, [job?.brief?.components, job?.brief?.objects]); // eslint-disable-line react-hooks/exhaustive-deps
+  const openParts = () => { setPlus(false); setParts(true); if (!partCat) api("/sitecreator/catalog/").then(setPartCat).catch(() => setPartCat({})); };
+  const savedParts = async (r, added) => {          // chosen: kept in the brief; with a design that exists the designer is asked to place what is new
+    merge(r);
+    if (added.length && Object.keys(job?.files || {}).some((n) => n.endsWith(".html"))) {
+      const names = added.map((x) => (partCat?.objects || []).find((o) => o.slug === x)?.name || (partCat?.components || []).find((c) => c.tag === x)?.name || (partCat?.plugins || []).find((q) => q.name === x)?.title || x);
+      try { merge(await api(`/sitecreator/${jobId}/chat/`, { method: "POST", body: { text: `${tx("Voeg deze systeemonderdelen toe aan de website, op de plek waar ze het best passen")}: ${names.join(", ")}.`, page, lang: getLanguage() } })); } catch (x) { setErr(errorText(x)); }
+    }
+  };
+  const changeParts = async (patch) => { try { merge(await api(`/sitecreator/${jobId}/`, { method: "PATCH", body: patch })); } catch (x) { setErr(errorText(x)); } };
   const [upBusy, setUpBusy] = useState(false);
   const uploads = job?.brief?.uploads || [];  // the PDF files of this design (their text is with the designer)
   const pickFiles = async (list) => {  // the "+" of the chat: pictures go with the next message, a PDF is read at once
@@ -1434,6 +1563,30 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const toSteps = async () => { if (running) { setBack(true); await stop(); } else setAgain(true); };
   useEffect(() => { if (back && job && job.status !== "running" && job.status !== "stopping") { setBack(false); setAgain(true); } }, [back, job]);
   const restore = () => act("restore", "restore").then((ok) => ok && reload(true));
+  const [redoOpen, setRedoOpen] = useState(false);
+  const recolor = async (themeName) => {   // another colour theme was chosen: the designer works the new colours into the design that is there (in the chat)
+    const text = `${tx("Ik heb een ander kleurenthema gekozen. Kleur het huidige ontwerp opnieuw in met de nieuwe kleuren (blokken, knoppen, iconen, accenten en afbeeldingen waar dat kan). Behoud de pagina's en de teksten.")} ${themeName}.`;
+    try { merge(await api(`/sitecreator/${jobId}/chat/`, { method: "POST", body: { text, page, lang: getLanguage() } })); } catch (x) { setErr(errorText(x)); }
+  };
+  const [dirty, setDirty] = useState(false);   // parts were taken out of the design: the Opslaan button keeps the result
+  useEffect(() => { setDirty(false); }, [jobId]);
+  const deleteSection = async (index) => {   // take a part out of the page that is shown, before the design is published
+    if (!(await confirmDialog(tx("Dit onderdeel uit het ontwerp halen? Je kunt het terugzetten met Vorige versie terugzetten."), { danger: true }))) return;
+    try { merge(await api(`/sitecreator/${jobId}/sections/`, { method: "POST", body: { file: cur, delete: [index] } })); setDirty(true); } catch (x) { setErr(errorText(x)); }
+  };
+  const saveDesign = async () => {   // what the design is now is the state that is kept (the question when the creator is closed starts from here)
+    try { baseline.current = await api(`/sitecreator/${jobId}/version/`); setDirty(false); } catch (x) { setErr(errorText(x)); }
+  };
+  const improveNow = async () => {  // keep the pages: the designer works the current settings into the design that is there, in the chat
+    setRedoOpen(false);
+    const names = partsOf(job?.brief).map((x) => partName(x, partCat));
+    const text = `${tx("Verbeter het huidige ontwerp en verwerk mijn huidige instellingen (kleuren, lettertype, hoeken, foto's en onderdelen). Behoud de pagina's en de teksten en pas alleen aan wat nodig is.")}${names.length ? ` ${names.join(", ")}.` : ""}`;
+    try { merge(await api(`/sitecreator/${jobId}/chat/`, { method: "POST", body: { text, page, lang: getLanguage() } })); } catch (x) { setErr(errorText(x)); }
+  };
+  const redesign = async () => {  // a new design with the data as they are now; the old one can be put back
+    setRedoOpen(false);
+    await act("redo", "generate", { redo: true });
+  };
   const improve = async (focus) => { if (await act("improve", "generate", { improve: true, focus })) setImproveOpen(false); };
   const chatMode = !!(job?.chat || job?.brief?.chat); // AI chat build: always the chat, never the steps
   const wizard = job && !chatMode && (job.status === "draft" || job.status === "error" || again);
@@ -1508,11 +1661,13 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
             <button type="button" onClick={() => zoomStep(1)} disabled={zoom >= 2} aria-label={tx("Vergroten")} title={tx("Vergroten")}>+</button>
           </span>}
           {!wizard && ready && <button type="button" className="btn sm" style={{ marginRight: ".6rem" }} onClick={shoot} disabled={shooting} aria-label={tx("Screenshot maken")} title={tx("Maak een screenshot van wat je nu ziet en stuur hem mee met je volgende bericht")}><IconCamera /></button>}
-          {!wizard && ready && !running && <button type="button" className="btn sm" style={{ marginRight: ".4rem" }} onClick={() => setImproveOpen(true)}><IconBolt /> {tx("Verbeteren")}</button>}
+          {!wizard && ready && !running && dirty && <button type="button" className="btn primary sm" style={{ marginRight: ".4rem" }} onClick={saveDesign} title={tx("Bewaar de wijzigingen in dit ontwerp")}><IconCheck /> {tx("Opslaan")}</button>}
+          {!wizard && ready && !running && job?.brief?.mode !== "improve" && <button type="button" className="btn sm" style={{ marginRight: ".4rem" }} disabled={!!busy} onClick={() => setRedoOpen(true)} title={tx("Maak met de huidige gegevens een nieuw ontwerp of verbeter het huidige")}><IconRefresh /> {tx("Ontwerpen")}</button>}
           {!wizard && ready && !running && (onApply
             ? <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => setCreateOpen(true)}><IconCheck /> {tx("Alles aanmaken")}</button>
             : <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => onImport(job)}>{tx("Importeren in easy2edit")}</button>)}
           <button type="button" className="pb-panelx" onClick={requestClose} aria-label={tx("Sluiten")}>×</button></div>
+        {redoOpen && <RedoPopup busy={!!busy} onClose={() => setRedoOpen(false)} onNew={redesign} onImprove={improveNow} onFocus={() => { setRedoOpen(false); setImproveOpen(true); }} />}
         {improveOpen && <ImprovePopup onClose={() => setImproveOpen(false)} onStart={improve} busy={busy === "improve"} />}
         {createOpen && job && <CreatePopup job={job} onDesign={merge} onLocate={locate} onClose={() => setCreateOpen(false)} onReview={() => { setCreateOpen(false); onImport(job); }} onCreate={(o) => { setCreateOpen(false); onApply(job, { ...o, off: job.modules_off_effective || job.brief?.modules_off || [] }); }} />}
         {!job && <p className="muted" style={{ padding: "1rem" }}>{err || <Loading />}</p>}
@@ -1520,10 +1675,10 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
         {job && !wizard && (
           <div ref={gridEl} style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: side.shut ? "0px 0px minmax(0, 1fr)" : `${side.w}px 10px minmax(0, 1fr)` }}>
             <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, overflow: "hidden", visibility: side.shut ? "hidden" : "visible" }}>
-              <div ref={chat} style={{ flex: 1, overflowY: "auto", padding: ".9rem", display: "flex", flexDirection: "column", gap: ".6rem" }}>
+              <div ref={chat} style={{ flex: 1, overflowY: "auto", overflowX: "hidden", minWidth: 0, padding: ".9rem", display: "flex", flexDirection: "column", gap: ".6rem" }}>
                 {chatMode && !(job.messages || []).length && <div style={{ alignSelf: "flex-start", maxWidth: "92%", padding: ".55rem .8rem", borderRadius: 12, background: "var(--card)", border: "1px solid var(--line)" }}>{tx("Hoi! Vertel in je eigen woorden wat voor website je wilt: waar is hij voor en voor wie? Ik ontwerp hem met de componenten en modules van easy2edit en je ziet het resultaat rechts. Foto's zoek je zelf op iStock; ik laat zien welke ik nodig heb.")}</div>}
                 {(job.messages || []).map((m, i) => (
-                  <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img loading="lazy" decoding="async" src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.role === "ai" && m.ask === "prefill" ? tx(m.text) : m.role === "ai" && m.ask === "photos" ? `${m.placed ? `${tx("Ik heb {0} afbeeldingen ingevuld.", String(m.placed))} ` : ""}${tx("Er zijn nog {0} afbeeldingen leeg.", String(m.n || 0))} ${m.why ? `${tx("Automatisch zoeken lukte niet")}: ${tx(m.why)} ` : ""}${tx("Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.")}` : m.text}{m.role === "user" && m.text && !m.questions?.length && <button type="button" className="btn sm" style={{ display: "block", marginTop: ".4rem", marginLeft: "auto" }} disabled={running} onClick={() => reloadPrompt(m.text)} title={tx("Zet deze tekst terug in het invoerveld om te wijzigen en opnieuw te sturen")}>{tx("Prompt opnieuw laden")}</button>}{m.questions?.length > 0 && (i === (job.messages || []).length - 1 || reopen === i) && <QuestionForm key={i} onRefView={setRefView} refViewId={refView?.id} picked={job.brief?.picked} colors={job.brief?.colors} mode={job.brief?.color_mode} saved={m.answers} onSave={(a, o) => api(`/sitecreator/${jobId}/answers/`, { method: "POST", body: { index: i, ans: a, own: o } }).catch(() => {})} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}{m.questions?.length > 0 && i !== (job.messages || []).length - 1 && <button type="button" className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setReopen(reopen === i ? -1 : i)}>{reopen === i ? tx("Vragen verbergen") : tx("Vragen opnieuw openen met mijn antwoorden")}</button>}</div>
+                  <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap", overflowWrap: "anywhere", boxSizing: "border-box" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img loading="lazy" decoding="async" src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.role === "ai" && m.ask === "prefill" ? tx(m.text) : m.role === "ai" && m.ask === "photos" ? `${m.placed ? `${tx("Ik heb {0} afbeeldingen ingevuld.", String(m.placed))} ` : ""}${tx("Er zijn nog {0} afbeeldingen leeg.", String(m.n || 0))} ${m.why ? `${tx("Automatisch zoeken lukte niet")}: ${tx(m.why)} ` : ""}${tx("Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.")}` : m.text}{m.role === "user" && m.text && !m.questions?.length && <button type="button" className="btn sm" style={{ display: "block", marginTop: ".4rem", marginLeft: "auto" }} disabled={running} onClick={() => reloadPrompt(m.text)} title={tx("Zet deze tekst terug in het invoerveld om te wijzigen en opnieuw te sturen")}>{tx("Prompt opnieuw laden")}</button>}{m.questions?.length > 0 && (i === (job.messages || []).length - 1 || reopen === i) && <QuestionForm key={i} onRefView={setRefView} refViewId={refView?.id} picked={job.brief?.picked} colors={job.brief?.colors} mode={job.brief?.color_mode} saved={m.answers} onSave={(a, o) => api(`/sitecreator/${jobId}/answers/`, { method: "POST", body: { index: i, ans: a, own: o } }).catch(() => {})} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}{m.questions?.length > 0 && i !== (job.messages || []).length - 1 && <button type="button" className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setReopen(reopen === i ? -1 : i)}>{reopen === i ? tx("Vragen verbergen") : tx("Vragen opnieuw openen met mijn antwoorden")}</button>}</div>
                 ))}
                 {(() => { // pictures are still empty after the search: the customer is asked to search more stock photos (opens the block Foto's en video's)
                   const last = (job.messages || [])[(job.messages || []).length - 1];
@@ -1579,13 +1734,27 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 <AiCreditAlert text={err} />
                 {!running && job.can_restore && <button type="button" className="btn sm" style={{ alignSelf: "flex-start" }} disabled={!!busy} onClick={restore}>{busy === "restore" ? tx("Bezig…") : tx("Vorige versie terugzetten")}</button>}
               </div>
-              {blocksOpen && (ready || chatMode) && <ThemeBlock key={job.id + (job.brief?.theme_name || "")} job={job} onChanged={() => reload(true)} />}
+              {blocksOpen && (ready || chatMode) && <ThemeBlock key={job.id + (job.brief?.theme_name || "")} job={job} onChanged={() => reload(true)} onRecolor={recolor} />}
+              {blocksOpen && (ready || chatMode) && <PartsBlock job={job} catalog={partCat} onOpen={openParts} onChange={changeParts} />}
               {blocksOpen && chatMode && <PhotoSlots job={job} onJob={merge} onAsk={async (t) => { try { merge(await api(`/sitecreator/${jobId}/chat/`, { method: "POST", body: { text: t, page, lang: getLanguage() } })); } catch (x) { setErr(errorText(x)); } }} onShow={(file) => { const p = pages.find((q) => String(job.files?.[q.file] || "").toLowerCase().includes(file)); if (p) setPage(p.file); return p?.title || ""; }} />}
+              {blocksOpen && (ready || chatMode) && <div aria-hidden="true" style={{ flex: "none", height: ".6rem" }} />}  {/* room between the last block and the line above the input */}
               {uploads.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", padding: ".5rem .7rem 0", borderTop: "1px solid var(--line)" }} aria-label={tx("PDF-bestanden bij je bericht")}>{uploads.map((u) => <span key={u.id} className="badge" style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".25rem .5rem", borderRadius: 8, border: "1px solid var(--line)", background: "color-mix(in srgb, var(--blue) 8%, var(--card))" }}>PDF · {u.name}{u.pages ? ` (${u.pages} p.)` : ""}{u.images ? ` · ${u.images} ${tx("afbeeldingen")}` : ""}<button type="button" className="pb-panelx" onClick={() => dropUpload(u.id)} aria-label={tx("Bestand weghalen")}>×</button></span>)}</div>}
               {shots.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", padding: ".5rem .7rem 0", borderTop: "1px solid var(--line)" }} aria-label={tx("Screenshots bij je bericht")}>{shots.map((u, k) => <span key={k} style={{ position: "relative" }}><img loading="lazy" decoding="async" src={u} alt={tx("Screenshot")} style={{ display: "block", height: 54, borderRadius: 8, border: "1px solid var(--line)" }} /><button type="button" className="pb-panelx" onClick={() => setShots((s) => s.filter((_, i) => i !== k))} aria-label={tx("Screenshot weghalen")} style={{ position: "absolute", top: -6, right: -6 }}>×</button></span>)}<small className="muted" style={{ alignSelf: "center" }}>{tx("gaat mee met je volgende bericht")}</small></div>}
+              {parts && <PartsPicker job={job} catalog={partCat} onClose={() => setParts(false)} onSaved={savedParts} />}
               <form onSubmit={send} style={{ padding: ".7rem", borderTop: shots.length || uploads.length ? 0 : "1px solid var(--line)", display: "flex", gap: ".5rem", alignItems: "flex-end" }}>
                 <input ref={upIn} type="file" accept="image/png,image/jpeg,image/webp,application/pdf,.pdf" multiple hidden onChange={(e) => { pickFiles(e.target.files); e.target.value = ""; }} />
-                <button type="button" className="btn" disabled={running || sending || upBusy} onClick={() => upIn.current?.click()} aria-label={tx("Bestanden toevoegen")} title={tx("Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van")}>{upBusy ? "…" : <IconPlus />}</button>
+                <span style={{ position: "relative", display: "inline-flex" }}>
+                  <button type="button" className="btn" disabled={running || sending || upBusy} onClick={() => setPlus((v) => !v)} aria-haspopup="menu" aria-expanded={plus} aria-label={tx("Toevoegen")} title={tx("Afbeeldingen, PDF-bestanden of systeemonderdelen toevoegen")}>{upBusy ? "…" : <IconPlus />}</button>
+                  {plus && (
+                    <>
+                      <span style={{ position: "fixed", inset: 0, zIndex: 30 }} onClick={() => setPlus(false)} aria-hidden="true" />
+                      <div role="menu" style={{ position: "absolute", left: 0, bottom: "calc(100% + .4rem)", zIndex: 31, minWidth: 260, display: "grid", padding: ".35rem", borderRadius: 12, border: "1px solid var(--line)", background: "var(--card)", boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}>
+                        <button type="button" role="menuitem" className="btn" style={{ justifyContent: "flex-start", border: 0, background: "transparent", textAlign: "left" }} onClick={() => { setPlus(false); upIn.current?.click(); }}><IconImage /> {tx("Afbeelding of PDF")}</button>
+                        <button type="button" role="menuitem" className="btn" style={{ justifyContent: "flex-start", border: 0, background: "transparent", textAlign: "left" }} onClick={openParts}><IconBolt /> {tx("Component, object of widget")}</button>
+                      </div>
+                    </>
+                  )}
+                </span>
                 <textarea ref={inputEl} rows={3} style={{ flex: 1 }} value={text} maxLength={2000} disabled={running} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(e); }} placeholder={tx("Wat moet er anders? bv. maak de kop rustiger, voeg een prijzenblok toe")} />
                 <button className="btn primary" disabled={running || sending || (!text.trim() && !attached)} aria-label={tx("Aanpassen")}><IconSend /></button>
               </form>
@@ -1621,8 +1790,10 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                   </div>
                 ) : ready ? (
                   <div style={{ width, maxWidth: "100%", height: "100%", boxSizing: "border-box", background: "#fff", overflow: "hidden", ...(dev === "web" ? {} : { border: `${dev === "phone" || dev === "mobile" ? 10 : 12}px solid #1e293b`, borderRadius: dev === "phone" || dev === "mobile" ? 34 : 24, boxShadow: "0 12px 40px rgba(0,0,0,.35)" }), opacity: running ? .6 : 1, transition: "opacity .3s" }}>
-                    <div style={{ width: `${100 / zoom}%`, height: `${100 / zoom}%`, transform: `scale(${zoom})`, transformOrigin: "0 0" }}>
-                      <iframe ref={frame} title={tx("Voorbeeld")} sandbox="allow-same-origin" srcDoc={previewHtml(job.files, cur, [...(job.brief?.photos || []), ...(job.brief?.videos || [])], job.brief?.color_mode === "both" ? prevMode : "", chatMode, kit)} onLoad={(e) => { keepInPreview(e); setTimeout(showFind, 100); }} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
+                    <div style={{ width: `${100 / zoom}%`, height: `${100 / zoom}%`, transform: `scale(${zoom})`, transformOrigin: "0 0", position: "relative" }}>
+                      <iframe ref={frame} title={tx("Voorbeeld")} sandbox="allow-same-origin" srcDoc={previewHtml(job.files, cur, [...(job.brief?.photos || []), ...(job.brief?.videos || [])], job.brief?.color_mode === "both" ? prevMode : "", chatMode, kit)} onLoad={(e) => { keepInPreview(e); setTimeout(showFind, 100); setPrevLoads((n) => n + 1); }} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
+                      <PreviewWidgets frameRef={frame} version={prevLoads} />
+                      <SectionTools frameRef={frame} version={prevLoads} disabled={running} onDelete={deleteSection} zoom={zoom} />
                     </div>
                   </div>
                 ) : <p className="muted" style={{ alignSelf: "center", textAlign: "center", maxWidth: 360 }}>{running ? "" : chatMode ? tx("Hier verschijnt het voorbeeld van je website zodra het ontwerp klaar is.") : ""}</p>}

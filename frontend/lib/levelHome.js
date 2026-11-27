@@ -10,10 +10,12 @@ import { api } from "./api";
 // After logging in: on a new installation (or after a reset: the server has a new "epoch" that this browser has not seen yet) everybody goes to the dashboard of their own level:
 // a superadmin to Super admin, an admin (edit rights somewhere) to Admin, everybody else to the dashboard. Otherwise the usual /dashboard.
 // where the person was when they logged out (or were logged out): kept on the server per user
+// pages that are not a place to come back to: the system pages (login, registration, no access, 404, blocked, maintenance ...)
+export const NOT_A_PLACE = /^\/(login|registreren|wachtwoord|geen-toegang|logout|uitgelogd|geo-blocked|onderhoud|404|not-found|sandbox|build-id|easy2edit_version)(\/|$|\?|#)/;
 async function lastPlace() {
   try {
     const p = (await api("/dashboard/prefs/"))?.prefs?.lastPlace;
-    if (typeof p === "string" && /^\/[^/\\]/.test(p) && !/^\/(login|registreren|wachtwoord|geen-toegang)(\/|$|\?)/.test(p)) return p;
+    if (typeof p === "string" && /^\/($|\?|[^/\\])/.test(p) && !NOT_A_PLACE.test(p)) return p;  // (the start page "/" is a place too)
   } catch {}
   return null;
 }

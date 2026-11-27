@@ -932,6 +932,20 @@ export default function PageBlocks({ pageKey, title = "" }) {
                 </span>
               </div>
               <label>{tx("Kolommen")}<select value={r.cols} onChange={(e) => setRow(r.id, { cols: Number(e.target.value) })}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+              {shell && (() => {   // the settings of a column are here, not on the page: the column that was clicked (the only one when the block has one)
+                const sel = r.cells.find((c) => c.id === curCell) || (r.cells.length === 1 ? r.cells[0] : null);
+                return (
+                  <div className="pb-aligngroup" data-easy2edit-tag="ui-column-settings">
+                    <strong>{tx("Geselecteerde kolom")}{sel ? ` ${r.cells.indexOf(sel) + 1}` : ""}</strong>
+                    {!sel && <small className="muted">{tx("Klik op een kolom op de pagina om de instellingen ervan hier te zien.")}</small>}
+                    {sel && <>
+                      <label>{tx("Breedte van deze kolom")}<select value={sel.width || "auto"} onChange={(e) => setCell(sel.id, { width: e.target.value })}>{CELL_WIDTHS.map((w) => <option key={w} value={w}>{w === "auto" ? tx("Gelijk") : `${w}%`}</option>)}</select></label>
+                      <span className="pb-stylerow"><span>{tx("Horizontaal uitlijnen")}</span><span className="pb-seg">{[["left", "⇤", "Links"], ["center", "↔", "Midden"], ["right", "⇥", "Rechts"]].map(([k, g, l]) => <button type="button" key={k} className={sel.halign === k ? "on" : ""} title={tx(l)} onClick={() => setCell(sel.id, { halign: k })}>{g}</button>)}</span></span>
+                      <span className="pb-stylerow"><span>{tx("Verticaal uitlijnen")}</span><span className="pb-seg">{[["top", "⤒", "Boven"], ["center", "↕", "Midden"], ["bottom", "⤓", "Onder"]].map(([k, g, l]) => <button type="button" key={k} className={sel.valign === k ? "on" : ""} title={tx(l)} onClick={() => setCell(sel.id, { valign: k })}>{g}</button>)}</span></span>
+                    </>}
+                  </div>
+                );
+              })()}
               <label>{tx("Ruimte")}<select value={r.gap} onChange={(e) => setRow(r.id, { gap: e.target.value })}><option value="sm">{tx("Klein")}</option><option value="md">{tx("Normaal")}</option><option value="lg">{tx("Groot")}</option></select></label>
                 </div>
               )}
@@ -1066,14 +1080,14 @@ export default function PageBlocks({ pageKey, title = "" }) {
           {own(r) && (title || h1) && <h1 className="pb-hero-title">{title || h1}</h1>}
           <div className={`pb-row gap-${r.gap}`} style={{ "--cols": r.cols, "--tpl": columns(r) }}>
             {r.cells.map((c) => (
-              <div className={`pb-cell${editing ? " edit" : ""}${!editing && (c.items || []).filter((x) => x.type === "button").length > 1 ? " btnrow" : ""}${c.style ? " card" : ""}${shell && curCell === c.id ? " sel" : ""}`} key={c.id} onMouseDown={editing ? () => setCurCell(c.id) : undefined} style={{ "--ha": AL_H[c.halign], "--jv": AL_V[c.valign], ...(c.gap !== undefined ? { "--cg": `${c.gap}rem` } : {}), textAlign: c.halign, ...(c.style && (c.valign === "center" || c.valign === "bottom") ? { alignSelf: c.valign === "center" ? "center" : "flex-end" } : {}), ...(c.style ? { ...(c.style.bg ? { background: c.style.bg } : {}), ...(c.style.radius != null ? { borderRadius: `${c.style.radius}px` } : {}), ...(c.style.pad != null ? { padding: `${c.style.pad}px` } : {}), ...(c.style.border ? { border: `1px solid ${c.style.border}` } : {}), boxShadow: c.style.shadow ? "0 12px 34px rgba(14, 6, 56, .14)" : "none" } : {}) }}
+              <div className={`pb-cell${editing ? " edit" : ""}${!editing && (c.items || []).filter((x) => x.type === "button").length > 1 ? " btnrow" : ""}${c.style ? " card" : ""}${shell && curCell === c.id ? " sel" : ""}`} key={c.id} onClickCapture={() => { if (shell) setCurCell(c.id); }} onMouseDown={editing ? () => setCurCell(c.id) : undefined} style={{ "--ha": AL_H[c.halign], "--jv": AL_V[c.valign], ...(c.gap !== undefined ? { "--cg": `${c.gap}rem` } : {}), textAlign: c.halign, ...(c.style && (c.valign === "center" || c.valign === "bottom") ? { alignSelf: c.valign === "center" ? "center" : "flex-end" } : {}), ...(c.style ? { ...(c.style.bg ? { background: colorOf(c.style.bg) } : {}), ...(c.style.radius != null ? { borderRadius: `${c.style.radius}px` } : {}), ...(c.style.pad != null ? { padding: `${c.style.pad}px` } : {}), ...(c.style.border ? { border: `1px solid ${c.style.border}` } : {}), boxShadow: c.style.shadow ? "0 12px 34px rgba(14, 6, 56, .14)" : "none" } : {}) }}
                 onDragOver={(e) => { if (drag.current || dragFixed() || panelDrag()) { e.preventDefault(); e.currentTarget.classList.add("drop-over"); } }} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove("drop-over"); }}
                 onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("drop-over"); if (panelDrag() && !drag.current) { dropPanel(c.id, null); return; } if (dragFixed() && !drag.current) { dropFixed(c.id, null); return; } if (drag.current) move(drag.current, c.id, null); drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>
                 {editing && ["top", "bottom", "left", "right"].filter((sd) => (sd === "top" || sd === "bottom" || r.cols < 4)).map((sd) => { const tip = tx({ top: "Leeg blok erboven toevoegen", bottom: "Leeg blok eronder toevoegen", left: "Leeg blok links ernaast toevoegen", right: "Leeg blok rechts ernaast toevoegen" }[sd]); return (
                   <span key={sd} className={`pb-edge e-${sd}`}><button type="button" title={tip} aria-label={tip} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); splitCell(r.id, c.id, sd); }}>+</button><i className="ar a1" /><i className="ar a2" /></span>
                 ); })}
                 {shell && <span className="pb-celltools"><button type="button" className="pb-pencil" title={tx("Deze kolom bewerken")} aria-label={tx("Deze kolom bewerken")} onClick={(e) => { e.stopPropagation(); setCurCell(c.id); setItemOpen({}); setBarOpen({ [r.id]: true }); showSettings(); }}>✎</button><button type="button" className="pb-pencil del" title={tx("Deze kolom verwijderen")} aria-label={tx("Deze kolom verwijderen")} onClick={(e) => { e.stopPropagation(); delCell(r, c); }}>×</button></span>}
-                {editing && (
+                {editing && !shell && (
                   <div className="pb-cellbar" onClick={(e) => e.stopPropagation()}>
                     <span className="pb-seg" title={tx("Horizontaal uitlijnen")}>{[["left", "⇤", "Links"], ["center", "↔", "Midden"], ["right", "⇥", "Rechts"]].map(([k, g, l]) => <button type="button" key={k} className={c.halign === k ? "on" : ""} title={tx(l)} onClick={() => setCell(c.id, { halign: k })}>{g}</button>)}</span>
                     <span className="pb-seg" title={tx("Verticaal uitlijnen")}>{[["top", "⤒", "Boven"], ["center", "↕", "Midden"], ["bottom", "⤓", "Onder"]].map(([k, g, l]) => <button type="button" key={k} className={c.valign === k ? "on" : ""} title={tx(l)} onClick={() => setCell(c.id, { valign: k })}>{g}</button>)}</span>

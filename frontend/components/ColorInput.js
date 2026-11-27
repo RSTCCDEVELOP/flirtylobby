@@ -91,7 +91,7 @@ export default function ColorInput({ value, onChange, onValue, tokens = false, a
   return (
     <>
       <button ref={btn} type="button" className={`colorinput ${className}`.trim()} disabled={disabled} title={title || tx("Kleur kiezen")} onClick={() => !disabled && setOpen((o) => !o)} onBlur={onBlur}
-        style={{ width: 44, height: 36, padding: 0, borderRadius: 8, border: "1px solid var(--line)", cursor: disabled ? "not-allowed" : "pointer", flex: "none", background: shown || "repeating-linear-gradient(45deg, transparent 0 4px, var(--line) 4px 5px)", boxShadow: "inset 0 0 0 2px var(--card, #fff)", opacity: disabled ? .55 : 1, ...style }} aria-haspopup="dialog" aria-expanded={open} {...rest} />
+        style={{ width: 44, height: 36, padding: 0, borderRadius: 8, border: "1px solid var(--line)", cursor: disabled ? "not-allowed" : "pointer", flex: "none", boxShadow: "inset 0 0 0 2px var(--card, #fff)", opacity: disabled ? .55 : 1, ...style, background: shown || "repeating-linear-gradient(45deg, transparent 0 4px, var(--line) 4px 5px)" }} aria-haspopup="dialog" aria-expanded={open} {...rest} />
       {popup}
     </>
   );

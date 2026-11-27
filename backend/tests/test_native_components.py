@@ -77,14 +77,43 @@ COLORS = {"primary": "#1b97d3", "secondary": "#f08a35", "card": "#f5f4f0", "mute
 
 @pytest.fixture
 def taken_apart(monkeypatch):
-    """The old behaviour (a component of the UI-kit taken apart into blocks): the default is that it stays one component, exactly like the design."""
+    """Taken apart into blocks is the default since build 443; this fixture keeps the tests explicit about it."""
     monkeypatch.setattr(DR, "KEEP_KIT_COMPONENTS", False)
 
 
-def test_kit_components_stay_components_by_default():
+def test_kit_components_are_taken_apart_by_default():
+    assert DR.KEEP_KIT_COMPONENTS is False  # every text, button and box is an object of the page editor
     root = parse_html(_kit("ui-testimonials"))
     rows = [{"title": "x", "cells": [{"items": [{"type": "code", "kit": True, "tag": "ui-testimonials"}]}]}]
-    assert DR.expand_native(rows, root, {}, COLORS) == rows  # the review cards with their avatars are not turned into plain texts
+    out = DR.expand_native(rows, root, {}, COLORS)
+    assert "code" not in [it["type"] for r in out for c in r["cells"] for it in c["items"]]
+
+
+def test_kit_components_stay_components_when_switched_on(monkeypatch):
+    monkeypatch.setattr(DR, "KEEP_KIT_COMPONENTS", True)
+    root = parse_html(_kit("ui-testimonials"))
+    rows = [{"title": "x", "cells": [{"items": [{"type": "code", "kit": True, "tag": "ui-testimonials"}]}]}]
+    assert DR.expand_native(rows, root, {}, COLORS) == rows
+
+
+@pytest.mark.parametrize("tag", ["ui-hero-center", "ui-hero-dark"])
+def test_centred_and_dark_hero_become_objects(tag):
+    rows = DR.native_component_rows(_node(_kit(tag)), {})
+    assert len(rows) == 1 and rows[0]["title"] == "hero" and rows[0]["min_height"] == 40
+    cell = rows[0]["cells"][0]
+    assert cell["halign"] == "center"
+    kinds = [i["type"] for i in cell["items"]]
+    assert kinds == ["text", "heading", "text", "button", "button"]  # label, heading, lead, two buttons: each an object of its own
+    assert all(i["align"] == "center" for i in cell["items"] if i["type"] != "button")
+    assert (rows[0]["bg"], rows[0]["color"]) == (("#111827", "#ffffff") if tag == "ui-hero-dark" else ("", ""))
+
+
+def test_hero_buttons_keep_their_style_primary_ghost_and_light():
+    center = DR.native_component_rows(_node(_kit("ui-hero-center")), {})[0]["cells"][0]["items"]
+    assert [i["style"] for i in center if i["type"] == "button"] == ["primary", "ghost"]
+    dark = DR.native_component_rows(_node(_kit("ui-hero-dark")), {})[0]["cells"][0]["items"]
+    light = [i for i in dark if i["type"] == "button"][1]
+    assert light["style"] == "outline" and light["color"] == "#ffffff"  # readable on the dark background
 
 
 def _expand(tag):
@@ -113,7 +142,7 @@ def test_testimonials_faq_stats_cta_pricing_become_blocks(taken_apart):
     stats = _expand("ui-stats")
     assert _types(stats) == ["widget"]
     cta = _expand("ui-cta")
-    assert len(cta) == 2 and cta[0]["bg"] == "#1b97d3" and cta[1]["bg"] == "#f08a35" and "button" in _types(cta)
+    assert len(cta) == 2 and cta[0]["bg"] == "#1b97d3" and cta[1]["bg"] == "#1f2937" and "button" in _types(cta)  # the kit: primary colour, then its accent (the dark text colour of the theme)
     price = _expand("ui-pricing")
     assert len(price[0]["cells"]) == 3 and "code" not in _types(price) and _types(price).count("button") == 3
 
@@ -174,3 +203,95 @@ def test_a_section_that_is_itself_a_component_stays_that_component():
     root = parse_html('<div data-easy2edit-tag="ui-stats"><div class="e2e-stack"><div class="e2e-grid"><div class="e2e-stat"><div class="e2e-stat__value">4</div><div class="e2e-stat__label">Kernwaarden</div></div></div></div></div>')
     rows = DR.rows_for(root, {}, {})
     assert rows and len(rows) == 1 and rows[0]["cells"][0]["items"][0]["type"] == "code" and rows[0]["cells"][0]["items"][0]["tag"] == "ui-stats"
+
+
+def _hero(tag, inner, cls="e2e-hero"):
+    return f'<div data-easy2edit-tag="{tag}"><section class="{cls}">{inner}</section></div>'
+
+
+TEXT = ('<span class="e2e-eyebrow">Welkom</span><h1>Een kop</h1><p class="e2e-lead">Een lead.</p>'
+        '<div class="e2e-row"><a href="#a" class="e2e-btn e2e-btn--lg">Actie</a><a href="#b" class="e2e-btn e2e-btn--light e2e-btn--lg">Meer</a></div>')
+IMGS = {"img/a.jpg": 1, "img/b.jpg": 2, "img/c.jpg": 3}
+
+
+def _rows(tag, html):
+    return DR.native_component_rows(_node(html), IMGS)
+
+
+@pytest.mark.parametrize("tag,cls", [("ui-hero-image", "e2e-hero e2e-hero--image"), ("ui-hero-image-center", "e2e-hero e2e-hero--image e2e-hero--center"), ("ui-hero-card", "e2e-hero e2e-hero--card")])
+def test_hero_with_a_background_photo_is_blocks_on_a_row_with_that_photo(tag, cls):
+    rows = _rows(tag, _hero(tag, '<div class="e2e-herobg" role="img"><img src="img/a.jpg" alt=""></div><div class="e2e-hero__shade"></div><div class="e2e-container e2e-hero__body">' + TEXT + "</div>", cls))
+    row = rows[0]
+    assert row["bg_image"] == 1 and row["title"] == "hero" and row["min_height"] >= 60
+    items = row["cells"][0]["items"]
+    assert [i["type"] for i in items] == ["text", "heading", "text", "button", "button"]  # every text and button an object
+    assert (row["cells"][0]["halign"] == "center") == (tag == "ui-hero-image-center")
+    assert bool(row["cells"][0]["card"]) == (tag == "ui-hero-card")
+
+
+def test_wide_hero_puts_the_picture_under_the_text_and_the_collage_next_to_it():
+    wide = _rows("ui-hero-wide", _hero("ui-hero-wide", '<div class="e2e-container">' + TEXT + '<div class="e2e-hero__panorama" role="img"><img src="img/a.jpg" alt=""></div></div>', "e2e-hero e2e-hero--wide e2e-hero--center"))
+    kinds = [i["type"] for i in wide[0]["cells"][0]["items"]]
+    assert kinds[-1] == "image" and kinds.count("button") == 2
+    collage = _rows("ui-hero-collage", _hero("ui-hero-collage", '<div class="e2e-container e2e-hero__inner"><div>' + TEXT + '</div><div class="e2e-hero__mosaic"><div role="img"><img src="img/a.jpg" alt=""></div><div role="img"><img src="img/b.jpg" alt=""></div><div role="img"><img src="img/c.jpg" alt=""></div></div></div>'))
+    text, pics = collage[0]["cells"]
+    assert pics["items"] == [{"type": "gallery", "imgs": [1, 2, 3]}] and text["width"] == "55"
+
+
+def test_reverse_split_has_the_picture_first_and_the_type_hero_is_only_text():
+    rev = _rows("ui-hero-split-reverse", _hero("ui-hero-split-reverse", '<div class="e2e-hero__side" role="img"><img src="img/b.jpg" alt=""></div><div class="e2e-container e2e-hero__inner"><div class="e2e-hero__text">' + TEXT + "</div></div>", "e2e-hero e2e-hero--reverse"))
+    pic, text = rev[0]["cells"]
+    assert pic["items"][0]["img"] == 2 and [i["type"] for i in text["items"]][:2] == ["text", "heading"]
+    typ = _rows("ui-hero-type", _hero("ui-hero-type", '<div class="e2e-container"><div class="e2e-hero__masthead"><span class="e2e-eyebrow">Editie</span></div><h1>Kop</h1><div class="e2e-hero__cols"><p class="e2e-lead">Een.</p><p>Twee.</p></div>' + TEXT + "</div>", "e2e-hero e2e-hero--type"))
+    assert len(typ[0]["cells"]) == 1 and "image" not in [i["type"] for i in typ[0]["cells"][0]["items"]]
+
+
+def test_a_hero_without_text_stays_a_component():
+    assert _rows("ui-hero-image", _hero("ui-hero-image", '<div class="e2e-herobg" role="img"></div>', "e2e-hero")) is None
+
+
+def test_the_two_boxes_of_a_call_to_action_keep_their_own_colours_and_a_small_space():
+    cta = DR._native_cta(_node(_kit("ui-cta")), {}, {"primary": "#7b2ce0", "secondary": "#7b2ce1", "text": "#101820"})
+    assert [r["bg"] for r in cta] == ["#7b2ce0", "#101820"]  # two different boxes, not two of the same blue
+    assert [r["color"] for r in cta] == ["#ffffff", "#ffffff"]
+    assert "mt" not in cta[0] and cta[1]["mt"] == 16  # the space between the boxes of the kit, not more
+    assert all(r["pad_top"] == 32 for r in cta)
+
+
+def test_the_text_on_a_light_box_is_dark():
+    assert DR._on_color("#ffffff") == "#151515" and DR._on_color("#101820") == "#ffffff" and DR._on_color("#f5c542") == "#151515"
+
+
+def _mode_ctx():
+    from types import SimpleNamespace
+
+    imp = SimpleNamespace(id=7, slug="demo-site", tag="import:7")
+    return {"imp": imp, "lang": "nl", "media": {}, "path": "/", "texts": {}, "images": {}, "faq": [], "page_bg": "#fafcfc",
+            "theme_colors": {"page": "#fafcfc", "bg": "#fafcfc", "card": "#ffffff", "text": "#1c312f", "primary": "#14b8a6", "secondary": "#f472b6"}}
+
+
+@pytest.mark.django_db
+def test_blocks_follow_the_light_and_the_dark_mode_not_a_fixed_background():
+    """A band of the design in the colour of the page, of the cards or of the theme must not get a fixed hex: in the dark mode it stayed white."""
+    from siteimport_lib import importer
+
+    def row(bg, color="", card=None):
+        return {"bg": bg, "color": color, "cells": [{"items": [{"type": "heading", "html": "Kop"}], **({"card": card} if card else {})}]}
+
+    rows = [row("#fafcfc", "#1c312f"), row("#ffffff"), row("#14b8a6", "#ffffff"), row("#101820", "#ffffff"), row("", card={"bg": "#ffffff", "radius": 12})]
+    out = importer._rows_from_ai(rows, _mode_ctx())
+    st = [r.get("style", {}) for r in out]
+    assert "bg" not in st[0] and "color" not in st[0]  # the colour of the page and of the text: the page shows, the text follows the mode
+    assert st[1]["bg"] == "card" and st[2]["bg"] == "primary"  # colours of the theme stay colours of the theme
+    assert st[2]["color"] == "#ffffff"  # (white text on the primary colour is the design)
+    assert st[3]["bg"] == "#101820"  # an own colour of the design stays as it is
+    assert "bg" not in st[4]  # a band without a colour: the page shows
+    assert out[4]["cells"][0]["style"]["bg"] == "card"  # a card in the colour of the cards follows the mode too
+
+
+def test_a_card_can_have_a_theme_colour_in_the_layout():
+    from apps.pages import layout
+
+    clean = layout._cell_style({"bg": "card", "border": "#cccccc", "radius": 10})
+    assert clean["bg"] == "card" and clean["border"] == "#cccccc"
+    assert layout._cell_style({"bg": "not-a-colour"}).get("bg") is None

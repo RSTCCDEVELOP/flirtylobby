@@ -10,6 +10,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { api, getToken } from "../lib/api";
+import { NOT_A_PLACE } from "../lib/levelHome";
 import { useSession } from "./Session";
 
 // Edit mode is NOT a personal setting that is synced: it is always off after logging in (see Session.js).
@@ -49,8 +50,8 @@ function install() {
 
 // Settings that change what is on the screen need a new draw; the last page someone was on does not (it only decides where "back to the backend" goes): no reload for it.
 const NO_RELOAD = new Set(["lastBackendUrl", "lastPlace"]);
-// pages that are not a place to come back to (login, registration, no access)
-export const NOT_A_PLACE = /^\/(login|registreren|wachtwoord|geen-toegang|logout|uitgelogd)(\/|$|\?)/;
+// pages that are not a place to come back to (login, registration, no access, 404 ...): see lib/levelHome.js
+export { NOT_A_PLACE };
 
 export default function PrefsSync() {
   const { user } = useSession();
@@ -60,7 +61,7 @@ export default function PrefsSync() {
   useEffect(() => {
     if (!user || !pathname) return;
     const place = pathname + (typeof window !== "undefined" ? window.location.search : "");
-    if (NOT_A_PLACE.test(place)) return;
+    if (NOT_A_PLACE.test(place) || document.documentElement.dataset.sysPage) return;  // a system page (login, 404 ...) is never a place to come back to
     try { if (localStorage.getItem("lastPlace") !== place) localStorage.setItem("lastPlace", place); } catch {}
   }, [pathname, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { install(); }, []);

@@ -11,6 +11,7 @@ import Movable from "./Movable";
 import PageBlocks from "./PageBlocks";
 import SiteFooter from "./SiteFooter";
 import SiteHeader from "./SiteHeader";
+import SystemPageMark from "./SystemPageMark";
 
 const TITLE = { nl: "Content niet beschikbaar", en: "Content not available", de: "Inhalt nicht verfügbar", fr: "Contenu non disponible", es: "Contenido no disponible", pt: "Conteúdo não disponível", zh: "内容不可用", ar: "المحتوى غير متاح" };
 const BODY = {
@@ -28,6 +29,8 @@ const BODY = {
 // per language (Admin -> Pagina's -> Content niet beschikbaar, address /geen-toegang). The buttons: back to the home page and, for a visitor who is not logged in, Inloggen.
 export default function ForbiddenView() {
   return (
+    <>
+      <SystemPageMark />
     <div className="site">
       <SiteHeader />
       <main className="doc">
@@ -41,5 +44,6 @@ export default function ForbiddenView() {
       </main>
       <SiteFooter />
     </div>
+    </>
   );
 }

@@ -261,6 +261,44 @@ def effective_off(b, items=None):
     return off | {i["key"] for i in items if i.get("in_installation") is False and i["key"] not in extra}
 
 
+def _plugin_price(name):
+    """The price per month (ex VAT) of a plugin in the price list of the licence; 0 = free."""
+    try:
+        from . import pricing
+
+        return float(pricing.load().get("items", {}).get(f"plugin:{name}", 0) or 0)
+    except Exception:  # noqa: BLE001
+        return 0.0
+
+
+def library_plugins():
+    """The plugins that a design may use: the ones that are on this website and the ones in the library, with active (on now), installed and free. Only a FREE plugin can be used by a design: a plugin that is off is installed and switched on when the design is made."""
+    from apps.plugins.models import Plugin
+
+    have = {p.name: p for p in Plugin.objects.all()}
+    out, seen = [], set()
+    try:
+        from . import resources
+
+        lib = [e for e in resources.catalog("plugins") if not e.get("bundle")]
+    except Exception:  # noqa: BLE001
+        lib = []
+    for e in lib:
+        n = e["name"]
+        if n in IGNORE_PLUGINS or n in seen:
+            continue
+        seen.add(n)
+        p = have.get(n)
+        price = _plugin_price(n)
+        out.append({"name": n, "title": str((p.title if p else "") or e.get("title") or n)[:80], "description": str((p.description if p else "") or e.get("description") or "")[:200], "installed": bool(p), "active": bool(p and p.enabled), "price": price, "free": price <= 0})
+    for n, p in have.items():
+        if n in seen or n in IGNORE_PLUGINS:
+            continue
+        price = _plugin_price(n)
+        out.append({"name": n, "title": (p.title or n)[:80], "description": (p.description or "")[:200], "installed": True, "active": bool(p.enabled), "price": price, "free": price <= 0})
+    return sorted(out, key=lambda x: x["title"].lower())
+
+
 def catalog():
     """What the design can use: the modules (with whether they are on in this system) and the system objects that exist now (slug, kind, name)."""
     from apps.sysobjects import service as sos
@@ -306,7 +344,15 @@ def catalog():
     langs = [{"code": l.code, "name": l.name, "native": l.native_name, "rtl": l.rtl, "enabled": l.enabled, "default": l.is_default} for l in Language.objects.all()]
     from . import entity
 
-    return {"modules": mods, "objects": objs, "languages": langs, "rules": R.as_dict(),
+    comps = []
+    try:
+        from . import componentpacks as _cp
+
+        comps = [{"tag": c["easy2edit_tag"], "name": str(c.get("name") or c["easy2edit_tag"])[:80], "category": str(c.get("category") or c.get("group") or "")[:60], "description": str(c.get("description") or "")[:160]}
+                 for c in _cp.get(None)["components"] if c.get("easy2edit_tag")]
+    except Exception:  # noqa: BLE001
+        logger.exception("sitecreator components")
+    return {"modules": mods, "objects": objs, "components": comps, "plugins": library_plugins(), "languages": langs, "rules": R.as_dict(),
             "organisation": {"filled": entity.filled(), "label": entity.label(), "text": entity.creator_text()}}  # step "Over je organisatie" of the creator
 
 
@@ -648,6 +694,17 @@ def clean_brief(patch, old):
         except Exception:  # noqa: BLE001
             pass
         b["objects"] = [x for x in (p["objects"] if isinstance(p["objects"], list) else []) if isinstance(x, str) and x in known][:40]
+    if "plugins_use" in p:  # the plugins that the customer wants: only FREE ones (a paid plugin is never installed by a design)
+        ok = {x["name"] for x in library_plugins() if x["free"]}
+        b["plugins_use"] = [x for x in dict.fromkeys(p["plugins_use"] if isinstance(p["plugins_use"], list) else []) if isinstance(x, str) and x in ok][:30]
+    if "components" in p:  # the components of the component set that the customer chose to be used (at least once each)
+        try:
+            from . import componentpacks as _cp
+
+            ctags = {c["easy2edit_tag"] for c in _cp.get(b.get("component_set") or None)["components"]}
+        except Exception:  # noqa: BLE001
+            ctags = set()
+        b["components"] = [x for x in dict.fromkeys(p["components"] if isinstance(p["components"], list) else []) if isinstance(x, str) and x in ctags][:30]
     if "step" in p:
         try:
             b["step"] = max(0, min(6, int(p["step"])))
@@ -695,6 +752,16 @@ def save(job, patch):
     job.name = (b.get("name") or job.name)[:120]
     SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, name=job.name, updated_at=timezone.now(), **upd)
     job.brief = b
+    if isinstance(patch, dict) and "plugins_use" in patch and (job.files or {}).get("index.html"):  # a design exists: the plugin is there at once, so the change that follows can use it
+        try:
+            _install_chosen_plugins(b)
+        except Exception:  # noqa: BLE001
+            logger.warning("sitecreator: plugins of the choice could not be installed", exc_info=True)
+    if isinstance(patch, dict) and "objects" in patch and (job.files or {}).get("index.html"):  # a design exists and a widget is added: it is installed now, so the change that follows can place it
+        try:
+            _install_chosen_widgets(b)
+        except Exception:  # noqa: BLE001
+            logger.warning("sitecreator: widgets of the choice could not be installed", exc_info=True)
     return job
 
 
@@ -1319,8 +1386,32 @@ def _brief_text(b):
     if objs:
         info = {o["slug"]: o for o in catalog()["objects"]}
         lines.append("SYSTEM OBJECTS to place (each as <div data-sysobject=\"SLUG\"></div>, see the rules; put each in the section that fits it):\n" + "\n".join(f"- {x}: {info.get(x, {}).get('name', '')} ({info.get(x, {}).get('kind_label', '')})" for x in objs))
+    pl = b.get("plugins_use") or []
+    if pl:
+        lines.append("PLUGINS that the customer chose (free, they are installed and on): build the pages so that they work with them and mention each where it fits:\n" + "\n".join(f"- {x}" for x in pl))
+    comps = b.get("components") or []
+    if comps:
+        lines.append("COMPONENTS of the component set that the customer chose (use EACH of them at least once, as a section or in a band, where it fits best; they are mandatory):\n" + "\n".join(f"- {x}" for x in comps))
     lines.append(f"Extra wishes: {str(b.get('extra') or '-')[:1500]}")
     return "\n".join(lines)
+
+
+def parts_text(b):
+    """What the customer added with the + of the chat (components, system objects, widgets), as text for the designer: they are used, not asked about again."""
+    b = b or {}
+    objs, comps, plugs = b.get("objects") or [], b.get("components") or [], b.get("plugins_use") or []
+    if not objs and not comps and not plugs:
+        return ""
+    info = {}
+    try:
+        info = {o["slug"]: o for o in catalog()["objects"]}
+    except Exception:  # noqa: BLE001
+        pass
+    out = ["SYSTEM PARTS that the customer added himself (components, system objects and widgets). They are part of the design: do not ask about them, put them in the brief and plan a place for each one."]
+    out += [f"- component {x}" for x in comps]
+    out += [f"- plugin {x}" for x in plugs]
+    out += [f"- {info.get(x, {}).get('kind_label', 'object')} {x}: {info.get(x, {}).get('name', '')}" for x in objs]
+    return "\n".join(out)
 
 
 class Stopped(ValueError):
@@ -1424,7 +1515,36 @@ def _install_chosen_widgets(b):
             logger.warning("sitecreator: widget %s is not in the library", k)
 
 
-def generate(job, improve=False, focus=""):
+def _install_chosen_plugins(b):
+    """The free plugins that the customer chose: a plugin that is not here is installed from the library, one that is off is switched on, so the design can use it. A paid plugin is never touched. Never raises."""
+    names = [str(x) for x in (b.get("plugins_use") or [])]
+    if not names:
+        return []
+    from apps.plugins import installer
+    from apps.plugins.models import Plugin
+    from apps.plugins.switch import SwitchError, set_enabled
+
+    done = []
+    free = {x["name"] for x in library_plugins() if x["free"]}
+    for n in names:
+        if n not in free:
+            continue
+        try:
+            if not Plugin.objects.filter(name=n).exists():
+                installer.install_from_library(n)
+            p = Plugin.objects.filter(name=n).first()
+            if p and not p.enabled:
+                set_enabled(p, True, with_requires=True)
+            if p:
+                done.append(n)
+        except SwitchError as e:
+            logger.warning("sitecreator: plugin %s could not be switched on: %s", n, e)
+        except Exception:  # noqa: BLE001
+            logger.warning("sitecreator: plugin %s could not be installed", n, exc_info=True)
+    return done
+
+
+def generate(job, improve=False, focus="", redo=False):
     if job.status in ("running", "stopping"):
         raise ValueError("Er wordt al gewerkt aan dit ontwerp.")
     if SiteDesignJob.objects.filter(user=job.user, status="running", updated_at__gte=timezone.now() - timezone.timedelta(minutes=12)).exists():
@@ -1438,8 +1558,18 @@ def generate(job, improve=False, focus=""):
         raise ValueError("Schrijf eerst wat er verbeterd moet worden: zonder opdracht verandert er niets.")
     if b.get("mode") == "improve" and not improve:
         raise ValueError("Een ingelezen ontwerp verbeter je met een opdracht (knop Verbeteren). Wil je het zoals het is gebruiken, kies dan Toepassen.")
+    if redo and not any(n.endswith(".html") for n in (job.files or {})):
+        raise ValueError("Er is nog geen ontwerp om opnieuw te maken.")
     _install_chosen_widgets(b)
-    keep = list(job.messages or []) if improve else []
+    _install_chosen_plugins(b)
+    keep = list(job.messages or []) if (improve or redo) else []
+    if redo and not improve:  # a new design with the data as they are now (name, colours, pages, photos, parts): another design direction, the old design stays available through "Vorige versie terugzetten"
+        b = dict(b)
+        if not b.get("hero_style"):
+            b.pop("direction", None)  # the system picks a new direction, unless the customer chose a style
+        b.pop("improve_now", None)
+        b.pop("focus", None)
+        SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, files_prev=dict(job.files or {}))
     if improve:  # improve what is here now (the files of the design as they are), with the points that the user asked attention for
         if not any(n.endswith(".html") for n in (job.files or {})):
             raise ValueError("Er is nog geen ontwerp om te verbeteren.")
@@ -1751,6 +1881,59 @@ def remove_ref(job, url):
     return refs_public(job)
 
 
+def _ensure_chosen(out_pages, b, tags, known):
+    """What the customer chose (components, system objects, widgets) is always in the plan: a part that the planner left out is added to the start page, before the closing section."""
+    if not out_pages:
+        return
+    placed_tags, placed_objs = set(), set()
+    for pg in out_pages:
+        for x in pg.get("sections") or []:
+            for c in [x] + list(x.get("cells") or []):
+                if c.get("tag"):
+                    placed_tags.add(c["tag"])
+                if c.get("sysobject"):
+                    placed_objs.add(c["sysobject"])
+    clean = lambda x: re.sub(r"[^a-z0-9_-]", "", str(x or "").lower())[:40]  # noqa: E731
+    add = [{"tag": t, "sysobject": "", "id": clean(t.replace("ui-", "")), "goal": "Chosen by the customer: use it where it fits this website", "menu": ""} for t in (b.get("components") or []) if t in tags and t not in placed_tags]
+    add += [{"tag": None, "sysobject": clean(o), "id": clean(o), "goal": "Chosen by the customer: place it where it fits this website", "menu": ""} for o in (b.get("objects") or []) if o in known and clean(o) not in {clean(x) for x in placed_objs}]
+    if not add:
+        return
+    secs = out_pages[0]["sections"]
+    at = max(1, len(secs) - 1) if secs else 0  # after the opening, before the closing section
+    secs[at:at] = add
+    logger.info("sitecreator: %d chosen parts added to the plan", len(add))
+
+
+def _dedupe_objects(out_pages, b):
+    """A system object is placed once in a design, and a page gets ONE photo slider (media object): the planner, the gallery that becomes a slider and the parts that the customer chose could
+    otherwise put the same slider (or a second one) under each other."""
+    seen = set()
+    for pg in out_pages:
+        media_here = False
+        keep = []
+        for x in pg.get("sections") or []:
+            cells = [x] if x.get("layout") != "band" else list(x.get("cells") or [])
+            kept = []
+            for c in cells:
+                so = c.get("sysobject")
+                if not so:
+                    kept.append(c)
+                    continue
+                is_media = str(so).startswith("media-")
+                if so in seen or (is_media and media_here):
+                    continue  # the same object twice, or a second photo slider on the page
+                seen.add(so)
+                media_here = media_here or is_media
+                kept.append(c)
+            if x.get("layout") == "band":
+                if kept:
+                    x["cells"] = kept
+                    keep.append(x)
+            elif kept:
+                keep.append(x)
+        pg["sections"] = keep or pg.get("sections") or []
+
+
 def _install_planned_widgets(out_pages):
     """The widgets that the planner placed are installed (active) now, so the system object exists when the page is built. Never raises."""
     keys = []
@@ -1785,6 +1968,7 @@ def _site_plan(pk, job, pages):
 
     lst = _pv.catalogus_tekst(b.get("component_set") or None)  # the catalogue: made from the component set, never written by hand
     objs = ", ".join(b.get("objects") or [])
+    chosen_comps = [x for x in (b.get("components") or []) if x in tags]
     avail = auto_objects(b)
     known = {o["slug"] for o in avail}
     obj_list = "\n".join(f"- {o['slug']}: {o['name']} ({o['kind_label']})" + (f" - {str(o.get('description') or '')[:110]}" if o.get("kind") == "widget" and o.get("description") else "") for o in avail)
@@ -1807,6 +1991,9 @@ def _site_plan(pk, job, pages):
               + 'Answer: {"pages": [{"file": "index.html", "title": "page title (max 60 chars)", "description": "meta description (max 155 chars)", "sections": [{"tag": "ui-...", "id": "x", "menu": "", "goal": "what this section says, in one sentence"}]}], "brand": "short brand name for the menu"}\n'
               f"The FIRST section of the start page is the opening: one of these heroes, chosen for this website: {', '.join(heroes)}. Do not use ui-hero-split unless it is in that list. "
               f"Available tags:\n{lst}")
+    if chosen_comps or b.get("objects"):
+        prompt += ("\n\nCHOSEN BY THE CUSTOMER (mandatory, every one of them must be in the plan, each in the place where it fits best): "
+                   + ("components " + ", ".join(chosen_comps) + "; " if chosen_comps else "") + ("system objects and widgets " + ", ".join(b.get("objects") or []) + "." if b.get("objects") else ""))
     plan = {}
     ref_imgs = refs_images(b)
     if ref_imgs:
@@ -1873,6 +2060,8 @@ def _site_plan(pk, job, pages):
                 i += "-2"
             seen.add(i)
             x["id"] = i
+    _ensure_chosen(out_pages, b, tags, {o["slug"] for o in catalog()["objects"]} if b.get("objects") else set())
+    _dedupe_objects(out_pages, b)
     _install_planned_widgets(out_pages)
     return {"brand": str(plan.get("brand") or (b.get("name") or "Website"))[:40], "pages": out_pages}
 
@@ -3881,6 +4070,9 @@ def _chat(pk, text, has, shots=None):
         pre = (PREFILL_RULE + "\n\n") if (job.brief or {}).get("prefill") is True else ""  # the customer said yes: the questions come filled in with assumptions
         mat = uploads_text(job.brief)
         mat = (mat + "\n\n") if mat else ""
+        pt = parts_text(job.brief)
+        if pt:
+            mat += pt + "\n\n"
         if shots:
             mat += "PICTURES of the customer are attached (his logo, an example, a drawing, a photo of his shop ...): look at them and use what matters for the design (colours, style, content, name) in the questions, their defaults and the brief.\n\n"
         out = _ask(CHAT_SYSTEM, f"{say}{pre}{cat}\n\n{mat}{_answered_text(job.messages)}Conversation so far:\n{convo}\n\nAnswer now with the JSON.", max_tokens=5000, pk=pk, images=shots or None)
@@ -4079,6 +4271,10 @@ def _revise_sections(pk, job, instruction, page, shots):
     sysm = _section_system(b)
     outline = _outline(files)
     focus = f"The user is looking at the page {page}.\n" if page in files else ""
+    cc = b.get("colors") or {}
+    if cc:  # the colours that the customer set are fixed: a request to "work in the current settings" never changes them
+        focus += ("THEME: the customer's colours are " + ", ".join(f"{k} {v}" for k, v in cc.items() if k in ("primary", "secondary", "bg", "card", "text") and v)
+                  + f"; font {b.get('font') or 'sans'}; corners {b.get('radius', 14)}px. They are FIXED: give a theme change ONLY when the user asks in words for other colours, another font or other corners, and never invent a colour scheme of your own.\n")
     look = "The user attached a screenshot of how the page looks to him now (see the picture): use it to understand what he means.\n" if shots else ""
     avail = auto_objects(b)
     known_obj = {o["slug"] for o in avail}
@@ -4177,12 +4373,58 @@ def _revise_sections(pk, job, instruction, page, shots):
     return files, b, str(plan.get("reply") or "").strip()[:400], changes
 
 
+_MEDIA_SEC = re.compile(r'data-sysobject="media-[a-z0-9_-]+"')
+
+
+def _one_slider_per_page(files):
+    """A page of a design in sections shows ONE photo slider (media object): a later section that holds only such an object (and maybe its heading) is removed, also when the customer chose several."""
+    out = dict(files)
+    for n, h in files.items():
+        mp = _main_parts(h) if n.endswith(".html") else None
+        if not mp:
+            continue
+        before, secs, after = mp
+        seen, keep = False, []
+        for sid, sh in secs:
+            if _MEDIA_SEC.search(sh) and not re.search(r'data-easy2edit-tag="(?!ui-section-heading)', sh):
+                if seen:
+                    continue
+                seen = True
+            keep.append((sid, sh))
+        if len(keep) != len(secs):
+            out[n] = _join_main(before, keep, after)
+    return out
+
+
+def delete_sections(job, file, indices):
+    """Take parts (sections) out of a page of the design, without the AI: indices = the numbers of the top-level blocks of <main> of that page, counted from 0 (as the preview counts them). The design before the change is kept as the way back. A page keeps at least one part."""
+    if job.status not in ("draft", "done", "error"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    files = dict(job.files or {})
+    html = files.get(str(file or ""))
+    mp = _main_parts(html) if html and str(file).endswith(".html") else None
+    if not mp:
+        raise ValueError("Deze pagina is niet in onderdelen gemaakt: laat de ontwerper het aanpassen in de chat.")
+    before, secs, after = mp
+    idx = {int(i) for i in (indices if isinstance(indices, list) else []) if str(i).lstrip("-").isdigit()}
+    if not idx or min(idx) < 0 or max(idx) >= len(secs):
+        raise ValueError("Dat onderdeel bestaat niet (meer). Ververs het voorbeeld.")
+    keep = [sec for i, sec in enumerate(secs) if i not in idx]
+    if not keep:
+        raise ValueError("Een pagina moet minstens één onderdeel houden.")
+    files[str(file)] = _join_main(before, keep, after)
+    SiteDesignJob.objects.filter(pk=job.pk).update(files=files, files_prev=dict(job.files or {}), updated_at=timezone.now())
+    job.refresh_from_db()
+    return job
+
+
 def _revise(pk, instruction, page, shots=None):
     try:
         job = SiteDesignJob.objects.get(pk=pk)
         if (job.brief or {}).get("sectioned") and any(_main_parts(h) for n, h in (job.files or {}).items() if n.endswith(".html")):  # a design in sections: only the parts that change, one small answer each
             files2, b2, reply, changes = _revise_sections(pk, job, instruction, page, shots)
             files2, left2 = repair_design(files2, b2)  # also after a change: no repeated id or picture
+            files2 = _one_slider_per_page(files2)
             b2 = {**b2, "check": left2[:20]}
             names = sorted({str(c.get("file")) for c in changes if str(c.get("file") or "").endswith(".html")})
             _set(pk, status="done", progress=100, step="Klaar", files=themed(files2, b2), brief=b2, messages=list(SiteDesignJob.objects.get(pk=pk).messages or []) + [{"role": "ai", "text": (reply + " " if reply else "") + f"Aangepast: {len(changes)} onderdeel/onderdelen" + (f" ({', '.join(names)})" if names else "") + "."}])

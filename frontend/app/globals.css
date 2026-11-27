@@ -1428,7 +1428,7 @@ body:has(.site) .sandbox-badge { top: calc(var(--site-header-h, 72px) / 2); }
 .gender-pick button.on[data-g="x"] { color: #1f1300; }
 
 /* ── page blocks / grid ── */
-.pb { container: pb / inline-size; width: 100%; max-width: 1100px; margin: 1.5rem auto 0; display: grid; gap: 1.2rem; padding: 0 1rem; }
+.pb { container: pb / inline-size; width: 100%; max-width: var(--content-w, 1100px); margin: 1.5rem auto 0; display: grid; gap: 1.2rem; padding: 0 1rem; }
 .pb-row { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); align-items: stretch; }
 .pb-row.gap-sm { gap: .5rem; } .pb-row.gap-md { gap: 1.2rem; } .pb-row.gap-lg { gap: 2.4rem; }
 @container pb (max-width: 700px) { .pb-row { grid-template-columns: 1fr; } }
@@ -1465,11 +1465,11 @@ body:has(.site) .sandbox-badge { top: calc(var(--site-header-h, 72px) / 2); }
 .pb-rowbar label { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: .4rem; }
 
 .pb { max-width: none; padding: 0; grid-template-columns: minmax(0, 1fr); } /* one column exactly as wide as the page: a block of 100vw must not stretch the column and push the other blocks sideways on a wide screen */
-.pb-rowwrap { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 1rem; box-sizing: border-box; }
+.pb-rowwrap { width: 100%; max-width: var(--content-w, 1100px); margin: 0 auto; padding: 0 1rem; box-sizing: border-box; }  /* the blocks are as wide as the content width of the website (Thema: Breedte van de inhoud), like the header and the footer */
 .pb-rowwrap[style*="width"] { padding: 0; }
 .pb-row { grid-template-columns: var(--tpl, repeat(var(--cols), minmax(0, 1fr))); }
 @container pb (max-width: 700px) { .pb-row { grid-template-columns: 1fr; } .pb-rowwrap[style*="width"]:not([data-screen]) { width: 100% !important; padding: 0 1rem; } .pb-rowwrap.hero { padding: 1.6rem 1rem; } .pb-rowwrap.hero::before { width: 160px; height: 160px; } }
-.pb-addrow { max-width: 1100px; margin: 0 auto; width: calc(100% - 2rem); }
+.pb-addrow { max-width: var(--content-w, 1100px); margin: 0 auto; width: calc(100% - 2rem); }
 .pb-w { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: .3rem; margin: 0; font-size: .8rem; color: var(--muted); }
 .pb-w select { width: auto; padding: .2rem .3rem; font-size: .8rem; }
 
@@ -2035,10 +2035,10 @@ html[data-blocks="elevated"] .site .card { border-color: transparent; box-shadow
 @media (max-width: 600px) { [data-list="rows"] .games-card { flex-direction: column; } [data-list="rows"] .games-card .games-thumb { width: 100%; } }
 
 /* width of the page: the pieces of a page (blocks and lists) sit in the same column, or use the full width (chosen per page in edit mode) */
-[data-width] > *:not(.pb):not(.overlay):not(script):not(style) { width: calc(100% - 2rem); max-width: 1068px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+[data-width] > *:not(.pb):not(.overlay):not(script):not(style) { width: calc(100% - 2rem); max-width: calc(var(--content-w, 1100px) - 32px); margin-left: auto; margin-right: auto; box-sizing: border-box; }
 [data-width="full"] > *:not(.pb):not(.overlay):not(script):not(style) { max-width: none; }
 [data-width="full"] > .pb { max-width: none; }
-[data-width] > .pb { max-width: 1100px; }
+[data-width] > .pb { max-width: var(--content-w, 1100px); }
 
 /* a magnifying glass in every search field (the bars that draw their own icon are left out) */
 input[type="search"]:not(.view-search input):not(.dash-search-box input) { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238b93a7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='7'/><path d='m20 20-3.5-3.5'/></svg>"); background-repeat: no-repeat; background-position: .7rem 50%; padding-left: 2.3rem; }
@@ -2063,12 +2063,12 @@ input[type="search"]:not(.view-search input):not(.dash-search-box input) { backg
 .pager-size { display: inline-flex; gap: .5rem; align-items: center; } .pager-size select { width: auto; padding: .3rem .5rem; }
 .pager-nav { display: inline-flex; gap: .3rem; align-items: center; flex-wrap: wrap; }
 .pager-nav .btn { min-width: 2.1rem; justify-content: center; }
-[data-width] > .pager { width: calc(100% - 2rem); max-width: 1068px; margin-left: auto; margin-right: auto; }
+[data-width] > .pager { width: calc(100% - 2rem); max-width: calc(var(--content-w, 1100px) - 32px); margin-left: auto; margin-right: auto; }
 
 /* the plan and donation lists follow the list settings of the page too */
 [data-list="rows"] .plan-grid, [data-list="rows"] .don-grid { grid-template-columns: 1fr; }
 [data-center="1"] .plan-grid, [data-center="1"] .don-grid { justify-content: center; text-align: center; }
-[data-width] > .paged { width: calc(100% - 2rem); max-width: 1068px; margin-left: auto; margin-right: auto; }
+[data-width] > .paged { width: calc(100% - 2rem); max-width: calc(var(--content-w, 1100px) - 32px); margin-left: auto; margin-right: auto; }
 [data-width="full"] > .paged { max-width: none; }
 .sample-face { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 3rem; font-weight: 800; } .member-card .pimg { position: relative; }
 
@@ -5341,3 +5341,7 @@ html[data-adm-credit="off"] .site-credit { display: none; }
 .setup-bar { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; margin: .8rem 0; padding: .7rem 1rem; border-radius: 12px; border: 1px solid var(--line); background: color-mix(in srgb, var(--blue) 7%, transparent); }
 .setup-bar .btn { white-space: nowrap; }
 .inv-body > .alert { margin-bottom: 1.1rem; }
+/* the number on a tile of the admin (how many users, groups ...) */
+.group-tile .tile-count { margin-top: auto; align-self: flex-start; padding: .2rem .7rem; border-radius: 999px; font-size: .78rem; font-weight: 700; color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, transparent); }
+/* with the side panel of the page editor the size and place of a picture are set in the panel (Afbeelding: formaat, uitlijnen): the bar on every picture on the page is gone */
+html[data-pbbar="1"] .img-place-bar { display: none !important; }

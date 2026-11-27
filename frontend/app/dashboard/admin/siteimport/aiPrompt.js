@@ -25,9 +25,10 @@ const KIND_HINT = {
   club: "a club or association: activities, schedule, membership, news, contact",
 };
 
-// modules: [{label, how}] the modules that the website uses; objects: [{slug, name, kind_label}] the system objects (live blocks of the system) that have to be placed on the pages.
+// modules: [{label, how}] the modules that the website uses; objects: [{slug, name, kind_label}] the system objects (live blocks of the system) that have to be placed on the pages; parts: [{tag, name, description}] the components of the component set that the customer chose and that must be used.
 // From the step plan (the design) it also gets: palette {primary, secondary, bg, card, text, dark, dbg, dcard, dtext} (exact colours; dbg/dcard/dtext are the dark mode), colorMode "light" | "dark" | "both", languages {main, extra: [{code, native, rtl}], switcher}, font (css stack), radius (px), theme (name of the chosen theme) and photos [{file, note}] that the user has uploaded.
-export function buildPrompt({ name, kind, lang, pages, style, colors, extra, modules = [], objects = [], palette = null, font = "", radius = null, theme = "", photos = [], colorMode = "light", languages = null, rules = null, componentsText = "", organisation = "" }) {
+export function buildPrompt({ name, kind, lang, pages, style, colors, extra, modules = [], objects = [], parts = [], palette = null, font = "", radius = null, theme = "", photos = [], colorMode = "light", languages = null, rules = null, componentsText = "", organisation = "" }) {
+  const hasParts = modules.length || objects.length || parts.length; // the section about modules, system objects and chosen components is only there when there is something to tell
   const RL = { max_pages: 12, max_images: 40, max_image_mb: 5, name_max: 40, ...(rules || {}) }; // the numbers of the importer (served by /sitecreator/catalog/)
   const mainLang = (languages && languages.main) || lang || "Dutch";
   const extraLangs = (languages && languages.extra) || [];
@@ -118,7 +119,7 @@ ${extraLangs.map((l) => `- Add a translation file vertalingen-${l.code}.json at 
 - Every page has a unique <title> (max 60 characters) and <meta name="description"> (max 155 characters).
 - Include an Open Graph image (og:image, img/og.jpg, 1200x630) on the start page.
 
-${modules.length || objects.length ? `## 5. Modules and system objects of easy2edit
+${hasParts ? `## 5. Modules and system objects of easy2edit
 easy2edit has modules (webshop, FAQ, community, agenda, ...) and system objects: ready-made, LIVE blocks that the system fills with real data (a product overview, an agenda, a subscription plan, a donation button, ...). Design the pages so that they work with the modules below, and place the system objects exactly as explained.
 ${modules.length ? `
 Modules this website uses (what the pages must do for each):
@@ -133,10 +134,13 @@ Rules for placing them:
 - Use each object once, on the page where it fits best (agenda objects on the home or agenda page, plans on a pricing section, product overviews on the shop section).
 The objects:
 ${objects.map((o) => `- ${o.slug}: ${o.name} (${o.kind_label})`).join("\n")}
+` : ""}${parts.length ? `
+Components the customer chose (MANDATORY: use every one of them at least once, in the section where it fits best, as a clearly recognisable block that follows the component list in the next section):
+${parts.map((c) => `- ${c.tag}${c.name ? `: ${c.name}` : ""}${c.description ? ` - ${c.description}` : ""}`).join("\n")}
 ` : ""}
 Links of the system that you may use in the menu, buttons and footer: / (home), /login, /registreren, /dashboard, /faq, /producten, /winkelwagen, /privacy, /cookies. Never build your own login, registration, cart or checkout forms.
 
-` : ""}## ${modules.length || objects.length ? 6 : 5}. Check and adjust in your design canvas BEFORE you deliver
+` : ""}## ${hasParts ? 6 : 5}. Check and adjust in your design canvas BEFORE you deliver
 Do not deliver blind. Use the design canvas of your client (Claude Design / Canvas, an artifact or any live preview) to look at the website and to adjust it, and only package the ZIP when every page is right.
 - Show every page in the canvas (put the css of style.css into the page for the preview if needed) and look at the real result, not only at the code. If your client has no canvas or preview, render the pages in a headless browser and look at the screenshots.
 - Check each page at 1440 px (computer), 820 px (iPad) and 390 px (phone) wide: no horizontal scrolling, nothing overlapping or cut off, columns become one column on the phone, the menu and buttons still fit.
@@ -146,15 +150,15 @@ ${colorMode !== "light" ? "- Check the dark mode as well: set data-theme=\"dark\
 ${photos.length ? "- The photos listed above are not in the ZIP, so they will not show in your canvas: that is expected. Look at the layout with temporary grey boxes of the same size and do NOT put those boxes in the files.\n" : ""}${objects.length ? "- The system objects (<div data-sysobject=\"...\"></div>) stay empty and show nothing in the canvas: check that the space around them (heading, intro, band) still looks right without them.\n" : ""}- Adjust in the canvas: fix every problem you see (spacing, contrast, alignment, overflow, text that is too long), look again, and repeat until all pages are right. Then write the files and make the ZIP.
 - In your final message tell me in a few lines what you checked and what you changed because of it.
 
-## ${modules.length || objects.length ? 7 : 6}. What to deliver: ONE ZIP file
+## ${hasParts ? 7 : 6}. What to deliver: ONE ZIP file
 - The end result MUST be a single downloadable ZIP file, named "${n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "website"}.zip", that I can upload directly in easy2edit (Website ontwerpen, tab ZIP-bestand). Do not give me loose code blocks as the final answer.
 - The ZIP MUST contain, at the top level: the html files ${files.join(", ")} (all of them) AND style.css (the css file, never missing and never empty), ${extraLangs.length ? `the translation files ${extraLangs.map((l) => `vertalingen-${l.code}.json`).join(", ")}, ` : ""}and the folder img/ with the pictures that you made, and the folder ${RL.screenshot_folder || "screenshots"}/ with a screenshot per page${photos.length ? " (not the photos listed in section 1)" : ""}. index.html MUST be at the top level of the ZIP (or inside one single top-level folder), never deeper, and every path in the html and css must be relative to it so the site works when you open index.html straight from the unzipped folder.
 - Create the actual files and the ZIP yourself with your code/file tools (for example Python zipfile) and give me the download link. Generate or fetch the pictures as real files in img/ when you can (royalty-free or generated images, each at most 5 MB). Test the ZIP before you hand it over: unzip it, check that all the html files and style.css are in it, that every html file links style.css, that index.html exists, that every html file, link and image reference resolves, and that there are no missing files.
 - If you cannot create a ZIP or files, then give every file complete in its own code block with the file name above it (style.css first, then ${files.join(", then ")}), plus a short Python or shell script that builds the ZIP from those files, and the list of pictures I still have to add (file name, size in pixels, one-line description). Never shorten or write "the rest is the same".
 - Finish with one short line per page saying what it is for, and the list of modules the site needs (web shop, FAQ, agenda, ...) if any.
 
-${completeness(modules.length || objects.length ? 8 : 7)}
-## ${modules.length || objects.length ? 9 : 8}. How I will use it
+${completeness(hasParts ? 8 : 7)}
+## ${hasParts ? 9 : 8}. How I will use it
 I upload the ZIP in easy2edit at Website ontwerpen (tab ZIP-bestand). easy2edit takes the colours and shapes as a theme, puts the pictures in the media library, turns every section into editable rows and blocks of the page editor (the system objects become live blocks), and switches on the modules the content needs. Nothing else is needed from you.`;
 }
 

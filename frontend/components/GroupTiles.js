@@ -48,9 +48,19 @@ export default function GroupTiles({ id }) {
     if (mods.plugins === false) return;
     api(admin ? "/plugins/menu/?scope=admin" : "/plugins/menu/").then(setPlugins).catch(() => setPlugins([]));
   }, [admin, mods.plugins]);
+  const [counts, setCounts] = useState({});   // the numbers on the tiles of the admin (users, groups, ...)
+  useEffect(() => { if (admin) api("/tile-counts/").then(setCounts).catch(() => setCounts({})); }, [admin]);
   const imported = useImported(mods.siteimport !== false);
   const router = useRouter();
   const entity = useEntity(); // the tile of the Entiteit carries the name set in the standard installation
+  const countText = (href) => {   // "12 gebruikers": the number of what the tile opens
+    const c = counts[href];
+    if (!c || typeof c.n !== "number") return "";
+    const one = c.n === 1;
+    if (c.unit === "entity") return `${c.n} ${tx(one ? entity?.label || "Bedrijf" : entity?.plural || "Bedrijven").toLowerCase()}`;
+    const keys = { users: ["{0} gebruiker", "{0} gebruikers"], groups: ["{0} groep", "{0} groepen"], roles: ["{0} rol", "{0} rollen"], grants: ["{0} module-toegang", "{0} module-toegangen"], ai: ["{0} AI-aanroep in 30 dagen", "{0} AI-aanroepen in 30 dagen"] }[c.unit];
+    return keys ? tx(keys[one ? 0 : 1], c.n) : "";
+  };
   if (!group) return <p className="muted">{tx("Deze groep bestaat niet.")}</p>;
 
   let items;
@@ -86,6 +96,7 @@ export default function GroupTiles({ id }) {
               {countOf(n) > 0 && <span className="cart-count group-tile-count" title={tx("Nieuw")}>{countOf(n)}</span>}
               <strong style={{ fontSize: "1.1rem" }}>{tx(n.label)}</strong>
               {(n.big || t) && <small>{n.big || tx(t.big)}</small>}
+              {countText(n.href) && <span className="tile-count">{countText(n.href)}</span>}
             </Link>
           );
         })}

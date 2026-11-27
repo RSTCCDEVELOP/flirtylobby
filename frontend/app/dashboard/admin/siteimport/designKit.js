@@ -139,6 +139,7 @@ function objectPreview(slug, photos, none) {
 
 // The page as one html text for the preview: the stylesheet, the svg pictures and the uploaded photos are put into it (the frame has no access to the other files).
 export function previewHtml(files, name, photos = [], theme = "", placeholders = false, kit = null) {
+  objSeq = 0; // the same design gives the same html every time (the ids of the mock-ups restart): otherwise the preview frame reloads on every render and flickers
   let h = files[name] || "";
   if (theme) h = /<html\b[^>]*data-theme=/i.test(h) ? h.replace(/(<html\b[^>]*data-theme=)["'][^"']*["']/i, `$1"${theme}"`) : h.replace(/<html\b/i, `<html data-theme="${theme}"`); // the design in its light or its dark mode
   const css = files["style.css"] || "";
@@ -309,6 +310,7 @@ export function promptText(b, catalog, componentsText = "") {
     name: b.name, kind: b.kind, lang: b.lang, pages: activePages(b).join(", "), extra: b.extra,
     style: [...(b.style_tags || []).map((t) => EN_TAGS[t] || t), b.style].filter(Boolean).join(", "),
     modules: (catalog?.modules || []).filter((m) => isUsed(m, b)), objects: (catalog?.objects || []).filter((o) => (b.objects || []).includes(o.slug)),
+    parts: (catalog?.components || []).filter((c) => (b.components || []).includes(c.tag)),
     componentsText, organisation: catalog?.organisation?.text || "", palette: Object.keys(b.colors || {}).length ? { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...b.colors } : null, colorMode: b.color_mode || "light",
     languages: { main: b.lang || "", mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", extra: (b.langs || []).map((c) => (catalog?.languages || []).find((l) => l.code === c)).filter(Boolean), switcher: b.lang_switch !== false }, font: FONTS[b.font || "sans"], radius: b.radius ?? null, theme: b.theme_name || "", photos, rules: catalog?.rules || null,
   });

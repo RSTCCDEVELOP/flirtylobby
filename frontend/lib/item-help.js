@@ -150,6 +150,8 @@ export const BUTTON_HELP = {
   "Setup verwijderen": "Verwijdert de groepen en demo-gebruikers van deze setup. De rollen blijven bestaan.",
   "Starten": "Voert de gekozen stappen uit.",
   "Naar energiebeheer": "Opent de beheerpagina van energie, om je website te verbeteren.",
+  "Afbeelding of PDF": "Voegt een afbeelding of PDF toe aan je bericht aan de ontwerper.",
+  "Component, object of widget": "Kies een component, systeemobject of widget dat in je website moet zitten. De ontwerper neemt het mee in het ontwerp en installeert wat nodig is.",
   "Template maken van deze website": "Maakt van deze website een template, met afbeeldingen en alles, dat je opnieuw kunt gebruiken.",
 };
 // Without its own text a button gets a general text by its kind.
