@@ -9,16 +9,30 @@
 
 import { useEffect, useRef, useState } from "react";
 import { tx } from "../lib/t";
-import { HEADER_HELP, ITEM_HELP } from "../lib/item-help";
+import { BUTTON_HELP, HEADER_HELP, ITEM_HELP, KIND_HELP } from "../lib/item-help";
 
 // Item help in the dashboard: the "?" at the top right > Item help switches it on (the event "item-help"). The page is dimmed and every tile, menu item and button that is pointed at tells what it does,
 // like the help in edit mode. Esc, or Item help again, switches it off.
 const SIDEBAR = ".sidebar a[href]";
-const SELECTOR = ["[data-help-key]", SIDEBAR, ...HEADER_HELP.map(([s]) => s)].join(",");
+const BUTTONS = ".content .btn, .content button, .overlay .btn, .overlay button";
+const SELECTOR = ["[data-help]", "[data-help-text]", "[data-help-key]", SIDEBAR, BUTTONS, ...HEADER_HELP.map(([s]) => s)].join(",");
 
+const labelOf = (el) => (el.getAttribute("aria-label") || el.textContent || "").replace(/\s+/g, " ").trim();
 const textOf = (el) => {
+  const own = el.closest("[data-help]")?.dataset.help;
+  if (own) return own;
+  const btn = el.closest(BUTTONS);
+  if (btn && !btn.closest("[data-help-key]")) {   // a button: by its text, else by its kind
+    const label = labelOf(btn);
+    const k = Object.keys(BUTTON_HELP).find((x) => tx(x) === label);
+    if (k) return BUTTON_HELP[k];
+    const kind = KIND_HELP.find(([sel]) => btn.matches(`.btn${sel}`));
+    if (kind) return kind[1];
+  }
   const key = el.closest("[data-help-key]")?.dataset.helpKey;
   if (key && ITEM_HELP[key]) return ITEM_HELP[key];
+  const own2 = el.closest("[data-help-text]")?.dataset.helpText;
+  if (own2) return own2;
   const a = el.closest(SIDEBAR);
   if (a) { const h = (a.getAttribute("href") || "").split("?")[0]; if (ITEM_HELP[h]) return ITEM_HELP[h]; }
   const hit = HEADER_HELP.find(([s]) => el.closest(s));

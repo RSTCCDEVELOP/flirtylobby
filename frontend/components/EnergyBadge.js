@@ -12,6 +12,8 @@ import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
 import { LineChart, Rating } from "./EnergyBlocks";
 import Tabs from "./Tabs";
+import { useSession } from "./Session";
+import { lvl } from "../lib/perms";
 import EcologiTree, { nextGoal } from "./EcologiTree";
 import { Legend, StackedBars } from "./EcologiCharts";
 import { IconCheck, IconTree, IconX } from "./Icons";
@@ -36,6 +38,8 @@ const STATUS = {
 export default function EnergyBadge({ b }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("trees");
+  const { user } = useSession();
+  const canManage = lvl(user, "energy") >= 1; // admin or higher: a way to the management page to improve the website
   useEffect(() => {
     if (!open) return undefined;
     const esc = (e) => { if (e.key === "Escape") setOpen(false); };
@@ -136,7 +140,12 @@ export default function EnergyBadge({ b }) {
             <small className="muted">{tx("Een schatting uit de data die bezoekers laden; servers, netwerk en apparaten inbegrepen. Er worden geen persoonsgegevens gebruikt.")}</small>
             {e && <div className="eco-foot">{more}</div>}
             </>}
-            {!e || tab === "energy" ? null : null}
+            {canManage && (
+              <div className="energy-manage">
+                <span><strong>{tx("Website verbeteren")}</strong><small className="muted">{tx("Bekijk het advies, meet de pagina's en pas de instellingen aan.")}</small></span>
+                <a className="btn primary" href="/dashboard/admin/energy">{tx("Naar energiebeheer")}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg></a>
+              </div>
+            )}
           </div>
         </div>, document.body)}
     </>

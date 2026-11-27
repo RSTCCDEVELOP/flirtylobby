@@ -131,8 +131,8 @@ export default function TemplateCreate({ onClose, onMade }) {
             <p className="muted" style={{ margin: 0 }}>{tx("Kies de pagina's die in de template komen: alleen die van dit ontwerp staan aan. Pagina's van een eerdere website of demo, of waarvan de module uitstaat, staan uit. Van de gekozen pagina's (maximaal 6) wordt een schermafdruk gemaakt voor het keuzescherm en voor een demo.")}</p>
             {pages === null && <p className="muted"><Loading /></p>}
             {pages && !pages.length && <p className="muted">{tx("Er zijn geen eigen pagina's. Er wordt een voorbeeldplaatje getekend in de kleuren van het thema.")}</p>}
-            {(pages || []).map((p) => <label key={p.key} style={{ display: "flex", gap: ".5rem", alignItems: "flex-start", opacity: p.default || on[p.key] ? 1 : .75 }}><input type="checkbox" checked={!!on[p.key]} onChange={(e) => setOn((o) => ({ ...o, [p.key]: e.target.checked }))} style={{ marginTop: 4 }} /><span>{p.title} <small className="muted">{p.path}</small>{p.reason && <small className="muted" style={{ display: "block" }}>{tx(p.reason)}</small>}</span></label>)}
-            {pages?.length > 0 && <label style={{ display: "flex", gap: ".5rem", alignItems: "center" }}><input type="checkbox" checked={mobile} onChange={(e) => setMobile(e.target.checked)} /> {tx("Ook de eerste gekozen pagina op een telefoon")}</label>}
+            {(pages || []).map((p) => <label key={p.key} className="check sec-toggle" style={{ opacity: p.default || on[p.key] ? 1 : .75 }}><span className="switch"><input type="checkbox" checked={!!on[p.key]} onChange={(e) => setOn((o) => ({ ...o, [p.key]: e.target.checked }))} /><span /></span><span>{p.title} <small className="muted">{p.path}</small>{p.reason && <small className="muted" style={{ display: "block" }}>{tx(p.reason)}</small>}</span></label>)}
+            {pages?.length > 0 && <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={mobile} onChange={(e) => setMobile(e.target.checked)} /><span /></span><span>{tx("Ook de eerste gekozen pagina op een telefoon")}</span></label>}
           </div>
         )}
         {tab === "what" && (

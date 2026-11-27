@@ -12,10 +12,10 @@ import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
 import Collapsible from "./Collapsible";
+import AccessList from "./AccessList";
 import Tabs from "./Tabs";
 
 const VALID = [[1, "1 uur"], [24, "1 dag"], [72, "3 dagen"], [168, "7 dagen"], [336, "14 dagen"], [720, "30 dagen"]];
-const LEVELS = [[0, "Geen"], [1, "Gebruik"], [2, "Bewerken"], [3, "Beheer"]];
 const STATUS = { open: ["ok", "Open"], accepted: ["ok", "Geaccepteerd"], expired: ["off", "Verlopen"] };
 const EMPTY = { first_name: "", last_name: "", email: "", require_terms: true, terms_url: "", require_email_verify: true, roles: [], groups: [], grants: {}, valid_hours: 168 };
 const Switch = ({ checked, onChange, label, hint }) => (
@@ -84,9 +84,10 @@ export default function UserInvites({ roles, groups }) {
       </Collapsible>
       {modal && (
         <div className="overlay" onClick={() => setModal(null)}>
-          <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={send}>
+          <form className="card modal form int-modal inv-modal" onClick={(e) => e.stopPropagation()} onSubmit={send}>
             <h2>{tx("Gebruiker uitnodigen")}</h2>
             <Tabs className="tabs-one-row" value={open} onChange={setOpen} tabs={[["user", "Gebruiker"], ["security", "Voorwaarden en verificatie"], ["rights", "Rollen en rechten"], ...(data.can_grants ? [["modules", "Toegang per module"]] : []), ["valid", "Geldigheid van de link"]]} />
+            <div className="inv-body">
             {sec("user", "Gebruiker", <>
               <div className="grid2">
                 <label>{tx("Voornaam")}<input value={modal.first_name} onChange={(e) => setModal({ ...modal, first_name: e.target.value })} required /></label>
@@ -112,24 +113,16 @@ export default function UserInvites({ roles, groups }) {
               </div>
             </>)}
             {data.can_grants && sec("modules", "Toegang per module", (
-              <div style={{ display: "grid", gap: ".4rem" }}>
-                {data.modules.map((m) => (
-                  <label key={m.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: ".5rem" }}>
-                    <span>{tx(m.label)} <small className="muted">{tx(m.group)}</small></span>
-                    <select value={modal.grants[m.key] || 0} onChange={(e) => setModal({ ...modal, grants: { ...modal.grants, [m.key]: Number(e.target.value) } })}>
-                      {LEVELS.map(([v, l]) => <option key={v} value={v}>{tx(l)}</option>)}
-                    </select>
-                  </label>
-                ))}
-              </div>
+              <AccessList modules={data.modules} value={modal.grants} onChange={(k, l) => setModal({ ...modal, grants: { ...modal.grants, [k]: l } })} />
             ))}
             {sec("valid", "Geldigheid van de link", (
               <label>{tx("De link is geldig voor")}
                 <select value={modal.valid_hours} onChange={(e) => setModal({ ...modal, valid_hours: Number(e.target.value) })}>{VALID.map(([h, l]) => <option key={h} value={h}>{tx(l)}</option>)}</select>
               </label>
             ))}
+            </div>
             {error && <div className="alert">{error}</div>}
-            <div className="row">
+            <div className="row inv-foot">
               <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>
               <button className="btn primary" disabled={busy}>{busy ? tx("Versturen…") : tx("Uitnodiging versturen")}</button>
             </div>

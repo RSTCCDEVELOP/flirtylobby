@@ -39,6 +39,7 @@ export default function MyAi() {
       <h1>{tx("AI")}</h1>
       <p className="muted">{tx("Wat jij aan AI hebt gebruikt en, als je tegoed moet kopen, hoeveel tegoed je nog hebt.")}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
+      <div className="ai-stack">
       <div className="cards" style={{ marginTop: 0 }}>
         {d.credit_required && <div className="card stat"><span>{tx("Tegoed")}</span><strong style={{ fontSize: "1.6rem" }}>{m(d.balance)}</strong>{d.low && <small style={{ color: "var(--danger)" }}>{tx("Bijna op: koop tegoed")}</small>}
           <button type="button" className="btn primary sm" onClick={() => setBuy(true)}>{tx("Tegoed kopen")}</button></div>}
@@ -58,6 +59,7 @@ export default function MyAi() {
         <div className="table-wrap"><table className="table"><thead><tr><th>{tx("Wanneer")}</th><th>{tx("Waar")}</th><th>{tx("Model")}</th><th>{tx("Tokens in")}</th><th>{tx("Tokens uit")}</th><th>{tx("Kosten")}</th></tr></thead>
           <tbody>{d.recent.map((r, i) => <tr key={i}><td>{new Date(r.at).toLocaleString()}</td><td>{r.source}</td><td>{r.model}</td><td>{num(r.tokens_in)}</td><td>{num(r.tokens_out)}</td><td>{r.ok ? m(r.charged) : tx("mislukt")}</td></tr>)}
             {!d.recent.length && <tr><td colSpan={6} className="muted">{tx("Nog geen AI-gebruik in de afgelopen 30 dagen.")}</td></tr>}</tbody></table></div>
+      </div>
       </div>
       {buy && <AiCreditPopup info={d} onClose={() => { setBuy(false); load(); }} />}
     </>

@@ -208,7 +208,7 @@ EASY2EDIT_BASE_DOMAIN = _base_domain()
 if DEBUG:
     # development only: also reachable from phones / other computers on the local network (10.x, 192.168.x, 172.16-31.x)
     ALLOWED_HOSTS = ["*"]
-    CORS_ALLOWED_ORIGIN_REGEXES = [r"^https?://(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|localhost|127\.0\.0\.1|([a-z0-9-]+\.)+" + __import__("re").escape(EASY2EDIT_BASE_DOMAIN) + r"):5173$"]  # also https (./dev-certs.sh) and a local test domain such as siten.easy2edit.com
+    CORS_ALLOWED_ORIGIN_REGEXES = [r"^https?://(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|localhost|127\.0\.0\.1|([a-z0-9-]+\.)+" + __import__("re").escape(EASY2EDIT_BASE_DOMAIN) + r"):" + os.environ.get("FRONTEND_PORT", "5173") + r"$"]  # also https (./dev-certs.sh) and a local test domain such as siten.easy2edit.com
 else:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 

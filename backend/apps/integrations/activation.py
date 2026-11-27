@@ -38,7 +38,7 @@ def retest_sms():
         except Exception as e:  # noqa: BLE001
             ok, msg = False, f"Geen verbinding: {e}"
         Integration.objects.filter(pk=obj.pk).update(last_test_ok=ok, last_test_message=msg[:300], last_test_at=timezone.now())
-        done.append((obj.slug, ok))
+        done.append((obj.slug, ok if ok or _has_key(obj) else None))  # None: no key filled in yet (nothing to test, not a failure)
     return done
 
 

@@ -13,7 +13,8 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { TILES } from "../lib/admin-tiles";
 import { useEntity } from "../lib/entity";
-import { pageAllowed, ADMIN_PAGES } from "../lib/perms";
+import { pageAllowed, ADMIN_PAGES, lvl } from "../lib/perms";
+import AccessSetupWizard from "./AccessSetupWizard";
 import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
 import { ADMIN_GROUP_OF, ADMIN_GROUPS, ADMIN_NAV, ADMIN_SECTION_GROUP, COMMUNITY, COMMUNITY_GROUP_OF, COMMUNITY_GROUPS } from "./DashboardShell";
@@ -37,6 +38,7 @@ export default function GroupTiles({ id }) {
   const admin = id.startsWith("a-");
   const group = (admin ? ADMIN_GROUPS : COMMUNITY_GROUPS).find((g) => g.id === id);
   const [plugins, setPlugins] = useState([]);
+  const [setup, setSetup] = useState(false);   // the wizard "Standaard setup": on the main page of the users, for admin and higher
   const [summary, setSummary] = useState(null); // the numbers that the left menu shows (new messages, requests ...): the tiles show them too
   const chat = useChat();
   const communityOn = ["profiles", "discover", "messages", "chat"].some((m) => mods[m] !== false);  // no calls for the community while its modules are off
@@ -67,12 +69,19 @@ export default function GroupTiles({ id }) {
     <>
       <EditableText id={`page.group.${id}.title`} as="h1" fallback={tx(group.title)} removable={false} />
       <EditableText id={`page.group.${id}.intro`} as="p" className="muted" fallback={tx("Kies een onderdeel. Liever het menu links? Wissel bovenin het menu.")} removable={false} />
+      {id === "a-people" && lvl(user, "users") >= 3 && (
+        <div className="setup-bar">
+          <span className="muted">{tx("Rollen, groepen, rechten en demo-gebruikers van een standaard installatie in één keer opzetten.")}</span>
+          <button type="button" className="btn" onClick={() => setSetup(true)}>{tx("Standaard setup")}</button>
+        </div>
+      )}
+      {setup && <AccessSetupWizard onClose={() => setSetup(false)} />}
       <TileSearch />
       <div className="cards" style={{ marginTop: 0 }}>
         {items.map((n) => {
           const t = TILES.find((x) => x.href === n.href);
           return (
-            <Link key={n.href} href={n.href} className="card stat link-card group-tile" onClick={(e) => gateClick(e, n.href, router)}>
+            <Link key={n.href} href={n.href} className="card stat link-card group-tile" data-help-key={n.href} data-help-text={n.plugin ? `${tx(n.label)}: ${tx("een plugin van deze website. Open hem om hem te gebruiken of in te stellen.")}` : undefined} onClick={(e) => gateClick(e, n.href, router)}>
               <span className="group-tile-ico">{n.icon}</span>
               {countOf(n) > 0 && <span className="cart-count group-tile-count" title={tx("Nieuw")}>{countOf(n)}</span>}
               <strong style={{ fontSize: "1.1rem" }}>{tx(n.label)}</strong>

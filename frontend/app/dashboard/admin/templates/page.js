@@ -15,6 +15,7 @@ import { tx } from "../../../../lib/t";
 import KitScope from "../../../../lib/ui-kit/KitScope";
 
 import Loading from "../../../../components/Loading";
+import TemplateCreate from "../../../../components/TemplateCreate";
 const MODES = [["copy", "Naast mijn pagina's zetten", "De pagina's van de template komen erbij. Jouw bestaande pagina's blijven staan."], ["replace", "In plaats van mijn pagina's", "Een pagina met hetzelfde adres wordt vervangen door die van de template."]];
 
 // The result of the check after a template was read in: every part with OK or what is wrong (and what was repaired).
@@ -42,6 +43,8 @@ export default function TemplatesPage() {
   const [done, setDone] = useState(null);
   const [q, setQ] = useState("");
   const [verify, setVerify] = useState(null);
+  const [notice, setNotice] = useState("");
+  const [make, setMake] = useState(false);   // the wizard "template of this website"
   const file = useRef(null);
   const load = useCallback(() => api("/templates/").then(setD).catch((e) => setErr(errorText(e))), []);
   useEffect(() => { load(); }, [load]);
@@ -77,6 +80,7 @@ export default function TemplatesPage() {
       <div className="page-head"><div><h1>{tx("Templates")}</h1>
         <p className="muted" style={{ margin: 0 }}>{tx("Een template is een complete website om mee te beginnen: pagina's, afbeeldingen en menu, soms met een eigen thema. Kies er een, bekijk de voorbeelden en gebruik hem. Daarna pas je alles zelf aan in de editor.")}</p></div></div>
       {err && <div className="alert">{err}</div>}
+      {notice && <div className="alert ok" role="status">{notice}</div>}
       {d.templates.some((t) => t.update) && <div className="alert" role="status">{tx("Er is een nieuwe versie van:")} {d.templates.filter((t) => t.update).map((t) => `${t.name} (v${t.applied_version} → v${t.version})`).join(", ")}. {tx("Gebruik de template opnieuw om hem bij te werken.")}</div>}
       {done?.scope === "system" && (
         <div className={`alert ${done.check?.ok ? "ok" : ""}`}>
@@ -99,6 +103,7 @@ export default function TemplatesPage() {
         {d.manage && <>
           <input ref={file} type="file" accept=".zip" onChange={upload} style={{ display: "none" }} />
           <button type="button" className="e2e-btn e2e-btn--outline" disabled={busy === "upload"} onClick={() => file.current?.click()}>{busy === "upload" ? "…" : tx("Template toevoegen (zip)")}</button>
+          <button type="button" className="e2e-btn" onClick={() => setMake(true)}>{tx("Template maken van deze website")}</button>
           <small className="muted">{tx("Alleen een superadmin. De bibliotheek staat in resource/templates.")}</small>
         </>}
       </div>
@@ -127,6 +132,7 @@ export default function TemplatesPage() {
         ))}
         {!list.length && <p className="muted">{d.templates.length ? tx("Niets gevonden.") : tx("Er zijn nog geen templates. Een superadmin kan er een toevoegen (zip) of zet hem in resource/templates.")}</p>}
       </div>
+      {make && <TemplateCreate onClose={() => setMake(false)} onMade={(r) => { setDone(null); setVerify(null); setErr(""); setNotice(`${tx("De template is gemaakt en staat in resource/templates")}: ${r.made?.name} ${r.made?.version}.${r.made?.skipped?.length ? ` ${tx("Overgeslagen (te groot of ontbreekt)")}: ${r.made.skipped.slice(0, 5).join(", ")}.` : ""}`); load(); }} />}
       {pick && (
         <div className="overlay" onClick={() => !busy && setPick(null)}>
           <div className="card modal" style={{ width: "min(900px, 94vw)", maxHeight: "92vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>

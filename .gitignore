@@ -91,3 +91,8 @@ manuals/tools/video/voice.json
 
 # ── output of Claude (not part of the product) ──
 /Claude outputs/
+.run/
+
+# lokale helpers, niet naar git
+/start.sh
+/stop.sh
