@@ -222,7 +222,8 @@ def test_screenshots_are_checked_and_get_a_small_picture_for_the_chat():
     Image.new("RGB", (900, 600), "white").save(buf, "PNG")
     good = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
     shots = sitecreator.clean_shots([good, "data:text/html;base64,AAAA", "javascript:alert(1)", good, good, good])
-    assert len(shots) == 3 and shots[0][0] == "image/png"  # only pictures, at most three
+    assert len(shots) == 4 and shots[0][0] == "image/png"  # only pictures (a web page and a script are left out)
+    assert len(sitecreator.clean_shots([good] * 9)) == 6  # at most six, like the chat of the creator says (Er kunnen maximaal 6 afbeeldingen bij één bericht)
     thumb = sitecreator._thumbs(shots[:1])[0]
     assert thumb.startswith("data:image/jpeg;base64,")
 

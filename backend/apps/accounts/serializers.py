@@ -6,6 +6,7 @@
 # website https://rstcc.net
 
 from django.contrib.auth.password_validation import validate_password
+from django.db import DatabaseError
 from rest_framework import serializers
 
 from apps.core.models import Entity
@@ -228,7 +229,10 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated):
         user = super().update(instance, validated)
-        prof = getattr(user, "profile", None)  # keep the dating profile in step
+        try:
+            prof = getattr(user, "profile", None)  # keep the dating profile in step
+        except DatabaseError:  # the table of the community plugin is not there (the plugin was removed): no profile to keep in step
+            prof = None
         if prof and ("gender" in validated or "birth_date" in validated):
             prof.gender, prof.birth_date = user.gender, user.birth_date
             prof.save(update_fields=["gender", "birth_date"])

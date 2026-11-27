@@ -27,6 +27,23 @@ def png(size=(40, 30)):
     return b.getvalue()
 
 
+@pytest.fixture(autouse=True)
+def _threads_of_the_plugin_run_inline(monkeypatch):
+    """The plugin processes a video and runs the AI in a thread of its own. In a test that thread runs in the test itself (the same database connection): no thread is left behind that holds the SQLite database
+    and makes the next tests fail with "database table is locked"."""
+    import threading
+
+    real = threading.Thread.start
+
+    def start(self):
+        if str(self.name).startswith("coach-video"):
+            self.run()
+        else:
+            real(self)
+
+    monkeypatch.setattr(threading.Thread, "start", start)
+
+
 @pytest.fixture
 def cv(settings, tmp_path):
     from apps.plugins import installer, manifest, runtime, signing
