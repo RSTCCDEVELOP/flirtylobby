@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "MCP 连接：让 MCP 服务器和 AI 助手安全地与本网站连接，每个连接拥有自己的密钥和权限。",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "跳转到此插件在管理后台中的位置，并在搜索栏中定位到此插件。",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "在整个管理菜单中搜索：图块、页面以及已启用的插件。",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "选择在此问题再次出现之前，你希望被打扰的间隔时长。"
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "选择在此问题再次出现之前，你希望被打扰的间隔时长。",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "无法连接到服务器。您没有互联网连接。",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "无法连接到服务器。API（{0}）在 {1} 秒内没有响应。",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "无法连接到服务器。API（{0}）可以访问，但请求未能通过。很可能是此网站的地址（{1}）不在该 API 的允许地址列表（CORS）中。",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "无法连接到服务器。API（{0}）无法访问：服务器未运行或正在重启，或者地址不正确。",
+  "Updates": "更新",
+  "Controleren op updates": "检查更新",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "检查并更新您的网站,例如在新版本发布后:数据库、插件、主题、语言和页面",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "检查并更新您的网站,例如在easy2edit新版本发布后:数据库、插件、主题、小工具、语言和页面。您的任何内容都不会被覆盖。",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "检查并更新您的网站,例如在easy2edit新版本发布后:数据库、插件、主题、小工具、语言和页面。",
+  "easy2edit versie {0}, build {1}": "easy2edit版本{0},构建{1}",
+  "Controle nodig": "需要检查",
+  "Laatst gecontroleerd voor build {0}.": "上次检查的构建版本为{0}。",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "检查并更新您的网站,就像在easy2edit新版本发布后一样。您将通过进度条看到每个步骤。您的页面、设计和文本都不会被覆盖。",
+  "Wat wordt gecontroleerd": "检查内容"
 }

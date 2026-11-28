@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "Інтеграція MCP: дозволяє MCP-серверам та AI-асистентам безпечно підключатися до цього сайту, з власним ключем і власними правами для кожного з'єднання.",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Переходить до місця розташування цього плагіна в адмінці, з рядком пошуку на цьому плагіні.",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Шукає по всьому меню адміністрування: плитки, сторінки та увімкнені плагіни.",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Виберіть, як довго вас не турбуватимуть, перш ніж це питання з'явиться знову."
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Виберіть, як довго вас не турбуватимуть, перш ніж це питання з'явиться знову.",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "Немає з'єднання з сервером. У вас немає підключення до інтернету.",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "Немає з'єднання з сервером. API ({0}) не відповідає протягом {1} секунд.",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "Немає з'єднання з сервером. API ({0}) доступний, але запит не проходить. Ймовірно, адреса цього вебсайту ({1}) не вказана в списку дозволених адрес (CORS) API.",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "Немає з'єднання з сервером. API ({0}) недоступний: сервер не працює або перезапускається, або адреса неправильна.",
+  "Updates": "Оновлення",
+  "Controleren op updates": "Перевірка оновлень",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "Перевірте та оновіть свій вебсайт, наприклад після нової версії: базу даних, плагіни, теми, мови та сторінки",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "Перевірте свій вебсайт та оновіть його, наприклад після нової версії easy2edit: базу даних, плагіни, теми, віджети, мови та сторінки. Жоден ваш контент не буде перезаписано.",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "Перевірте свій вебсайт та оновіть його, наприклад після нової версії easy2edit: базу даних, плагіни, теми, віджети, мови та сторінки.",
+  "easy2edit versie {0}, build {1}": "easy2edit версія {0}, збірка {1}",
+  "Controle nodig": "Потрібна перевірка",
+  "Laatst gecontroleerd voor build {0}.": "Востаннє перевірено для збірки {0}.",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "Перевіряє ваш вебсайт та оновлює його, так само як після нової версії easy2edit. Ви бачите кожен крок за допомогою індикатора виконання. Жодна з ваших сторінок, дизайнів та текстів не буде перезаписана.",
+  "Wat wordt gecontroleerd": "Що перевіряється"
 }

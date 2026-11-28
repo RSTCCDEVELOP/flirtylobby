@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "The MCP connection: lets MCP servers and AI assistants connect safely to this website, with their own key and their own rights per connection.",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Goes to the place of this plugin in the admin, with the search bar set to this plugin.",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Searches the whole admin menu: tiles, pages and plugins that are on.",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Choose how long you are left alone before this question comes back."
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Choose how long you are left alone before this question comes back.",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "No connection to the server. You have no internet connection.",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "No connection to the server. The API ({0}) does not answer within {1} seconds.",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "No connection to the server. The API ({0}) can be reached, but the request does not get through. Most likely the address of this website ({1}) is not in the list of allowed addresses (CORS) of the API.",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "No connection to the server. The API ({0}) cannot be reached: the server is not running or is restarting, or the address is wrong.",
+  "Updates": "Updates",
+  "Controleren op updates": "Check for updates",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "Check and update your website, as after a new version: database, plugins, themes, languages and pages",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "Check your website and bring it up to date, as after a new version of easy2edit: database, plugins, themes, widgets, languages and pages. None of your content is overwritten.",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "Check your website and bring it up to date, as after a new version of easy2edit: the database, the plugins, the themes, the widgets, the languages and the pages.",
+  "easy2edit versie {0}, build {1}": "easy2edit version {0}, build {1}",
+  "Controle nodig": "Check needed",
+  "Laatst gecontroleerd voor build {0}.": "Last checked for build {0}.",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "Checks your website and brings it up to date, just like after a new version of easy2edit. You see every step with a progress bar. Nothing of your pages, designs and texts is overwritten.",
+  "Wat wordt gecontroleerd": "What is checked"
 }

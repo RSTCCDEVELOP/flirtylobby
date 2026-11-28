@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "MCP bağlantısı: MCP sunucularının ve yapay zeka asistanlarının bu web sitesiyle güvenli bir şekilde bağlantı kurmasını sağlar; her bağlantı için kendi anahtarı ve kendi yetkileri vardır.",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Bu eklentinin yönetim panelindeki yerine, arama çubuğu bu eklentide olacak şekilde gider.",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Tüm yönetim menüsünde arama yapar: kutucuklar, sayfalar ve etkin olan eklentiler.",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Bu sorunun tekrar sorulmasından önce ne kadar süre rahat bırakılmak istediğinizi seçin."
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Bu sorunun tekrar sorulmasından önce ne kadar süre rahat bırakılmak istediğinizi seçin.",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "Sunucuyla bağlantı yok. İnternet bağlantınız yok.",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "Sunucuyla bağlantı yok. API ({0}) {1} saniye içinde yanıt vermiyor.",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "Sunucuyla bağlantı yok. API ({0}) erişilebilir durumda, ancak istek ulaşmıyor. Muhtemelen bu web sitesinin adresi ({1}) API'nin izin verilen adresler (CORS) listesinde bulunmuyor.",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "Sunucuyla bağlantı yok. API ({0}) erişilebilir değil: sunucu çalışmıyor veya yeniden başlatılıyor, ya da adres doğru değil.",
+  "Updates": "Güncellemeler",
+  "Controleren op updates": "Güncellemeleri kontrol et",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "Yeni bir sürümden sonra olduğu gibi web sitenizi kontrol edin ve güncelleyin: veritabanı, eklentiler, temalar, diller ve sayfalar",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "Easy2edit'in yeni bir sürümünden sonra olduğu gibi web sitenizi kontrol edin ve güncelleyin: veritabanı, eklentiler, temalar, widget'lar, diller ve sayfalar. İçeriğinizin hiçbir kısmı üzerine yazılmaz.",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "Easy2edit'in yeni bir sürümünden sonra olduğu gibi web sitenizi kontrol edin ve güncelleyin: veritabanı, eklentiler, temalar, widget'lar, diller ve sayfalar.",
+  "easy2edit versie {0}, build {1}": "easy2edit sürüm {0}, build {1}",
+  "Controle nodig": "Kontrol gerekli",
+  "Laatst gecontroleerd voor build {0}.": "Build {0} için son kontrol edildi.",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "Easy2edit'in yeni bir sürümünden sonra olduğu gibi web sitenizi kontrol eder ve günceller. Her adımı bir ilerleme çubuğuyla görürsünüz. Sayfalarınızın, tasarımlarınızın ve metinlerinizin hiçbiri üzerine yazılmaz.",
+  "Wat wordt gecontroleerd": "Neler kontrol ediliyor"
 }

@@ -17,29 +17,11 @@ import { lvl } from "../lib/perms";
 
 const KEY = "sysupdate-later";
 
-// After an update of easy2edit (a new build): an administrator or superadmin is asked whether the site may be checked and brought up to date.
-// The window shows each step (copy of the content, database, plugins, themes, languages, pages) with a progress bar. Content is never removed.
-export default function SystemUpdatePrompt() {
-  const { user } = useAuth() || {};
-  const adm = !!user && (user.is_staff || lvl(user, "system") >= 3);
-  const first = useSandboxFirst(adm); // after the licence, the sandbox and the manual; the installation and the AI wait for this one
-  const [info, setInfo] = useState(null);
+// The steps of the check, one by one with a progress window (the same after a new build and from Admin -> Systeem -> Updates). steps = [{key, label}]. Content is never removed.
+export function useSystemUpdateRun() {
   const [run, setRun] = useState(null);
-
-  useEffect(() => {
-    if (!user) return undefined;
-    if (adm && (!first.known || first.pendingBase)) { if (adm) setBlock("update", true); return undefined; } // still waiting for its turn
-    try { if (sessionStorage.getItem(KEY)) { setBlock("update", false); return undefined; } } catch {}
-    api("/system/update/").then((r) => { if (r?.needed) setInfo(r); else setBlock("update", false); }).catch(() => setBlock("update", false));
-    return undefined;
-  }, [user, adm, first.known, first.pendingBase]);
-  useEffect(() => () => setBlock("update", false), []);
-
-  const later = () => { try { sessionStorage.setItem(KEY, "1"); } catch {} setInfo(null); setBlock("update", false); };
-
-  async function start() {
-    const steps = info.steps.map((s) => ({ ...s, status: "wait" }));
-    setInfo(null);
+  async function start(list) {
+    const steps = list.map((s) => ({ ...s, status: "wait" }));
     const notes = [];
     let failed = 0;
     setRun({ title: tx("Site controleren en bijwerken"), steps, error: "", done: false, notes });
@@ -53,10 +35,35 @@ export default function SystemUpdatePrompt() {
     }
     setRun((x) => ({ ...x, done: true, note: failed ? tx("Klaar, maar {0} stap(pen) hebben aandacht nodig: zie hieronder.", failed) : tx("Alles is gecontroleerd en actueel. Je pagina's en teksten zijn niet gewijzigd.") }));
   }
+  const popup = <RunPopup run={run} onClose={() => { setRun(null); setBlock("update", false); window.location.reload(); }} />;
+  return { start, popup, running: !!run };
+}
+
+// After an update of easy2edit (a new build): an administrator or superadmin is asked whether the site may be checked and brought up to date.
+// The window shows each step (copy of the content, database, plugins, themes, languages, pages) with a progress bar. Content is never removed.
+export default function SystemUpdatePrompt() {
+  const { user } = useAuth() || {};
+  const adm = !!user && (user.is_staff || lvl(user, "system") >= 3);
+  const first = useSandboxFirst(adm); // after the licence, the sandbox and the manual; the installation and the AI wait for this one
+  const [info, setInfo] = useState(null);
+  const { start: runSteps, popup } = useSystemUpdateRun();
+
+  useEffect(() => {
+    if (!user) return undefined;
+    if (adm && (!first.known || first.pendingBase)) { if (adm) setBlock("update", true); return undefined; } // still waiting for its turn
+    try { if (sessionStorage.getItem(KEY)) { setBlock("update", false); return undefined; } } catch {}
+    api("/system/update/").then((r) => { if (r?.needed) setInfo(r); else setBlock("update", false); }).catch(() => setBlock("update", false));
+    return undefined;
+  }, [user, adm, first.known, first.pendingBase]);
+  useEffect(() => () => setBlock("update", false), []);
+
+  const later = () => { try { sessionStorage.setItem(KEY, "1"); } catch {} setInfo(null); setBlock("update", false); };
+
+  function start() { const steps = info.steps; setInfo(null); runSteps(steps); }
 
   return (
     <>
-      <RunPopup run={run} onClose={() => { setRun(null); setBlock("update", false); window.location.reload(); }} />
+      {popup}
       {info && (
         <div className="overlay" role="dialog" aria-modal="true" onClick={later}>
           <div className="card modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>

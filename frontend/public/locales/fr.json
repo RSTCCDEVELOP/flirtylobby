@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "La liaison MCP : permet aux serveurs MCP et aux assistants IA de se connecter en toute sécurité à ce site web, avec une clé propre et des droits propres par liaison.",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Accède à l'emplacement de cette extension dans l'administration, avec la barre de recherche sur cette extension.",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Recherche dans tout le menu d'administration : tuiles, pages et extensions activées.",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Choisissez combien de temps vous souhaitez être tranquille avant que cette question ne revienne."
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Choisissez combien de temps vous souhaitez être tranquille avant que cette question ne revienne.",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "Pas de connexion au serveur. Vous n'avez pas de connexion internet.",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "Pas de connexion au serveur. L'API ({0}) ne répond pas dans un délai de {1} secondes.",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "Pas de connexion au serveur. L'API ({0}) est bien accessible, mais la requête n'aboutit pas. L'adresse de ce site web ({1}) ne figure probablement pas dans la liste des adresses autorisées (CORS) de l'API.",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "Pas de connexion au serveur. L'API ({0}) n'est pas accessible : le serveur ne fonctionne pas ou est en cours de redémarrage, ou l'adresse est incorrecte.",
+  "Updates": "Mises à jour",
+  "Controleren op updates": "Rechercher des mises à jour",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "Vérifiez et mettez à jour votre site web, comme après une nouvelle version : base de données, plugins, thèmes, langues et pages",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "Vérifiez votre site web et mettez-le à jour, comme après une nouvelle version d'easy2edit : base de données, plugins, thèmes, widgets, langues et pages. Aucun de vos contenus ne sera écrasé.",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "Vérifiez votre site web et mettez-le à jour, comme après une nouvelle version d'easy2edit : la base de données, les plugins, les thèmes, les widgets, les langues et les pages.",
+  "easy2edit versie {0}, build {1}": "easy2edit version {0}, build {1}",
+  "Controle nodig": "Vérification nécessaire",
+  "Laatst gecontroleerd voor build {0}.": "Dernière vérification pour la build {0}.",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "Vérifie votre site web et le met à jour, comme après une nouvelle version d'easy2edit. Vous voyez chaque étape avec une barre de progression. Aucune de vos pages, de vos designs et de vos textes ne sera écrasée.",
+  "Wat wordt gecontroleerd": "Ce qui est vérifié"
 }

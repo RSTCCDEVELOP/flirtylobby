@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "Integrasi MCP: memungkinkan server MCP dan asisten AI terhubung dengan aman ke situs web ini, dengan kunci sendiri dan hak akses sendiri per integrasi.",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Membuka lokasi plugin ini di admin, dengan bilah pencarian diarahkan ke plugin ini.",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Mencari di seluruh menu admin: ubin, halaman, dan plugin yang aktif.",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Pilih berapa lama kamu ingin dibiarkan tenang sebelum pertanyaan ini muncul kembali."
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Pilih berapa lama kamu ingin dibiarkan tenang sebelum pertanyaan ini muncul kembali.",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "Tidak ada koneksi ke server. Anda tidak memiliki koneksi internet.",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "Tidak ada koneksi ke server. API ({0}) tidak merespons dalam {1} detik.",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "Tidak ada koneksi ke server. API ({0}) dapat dijangkau, tetapi permintaan tidak sampai. Kemungkinan alamat situs web ini ({1}) tidak terdaftar dalam daftar alamat yang diizinkan (CORS) oleh API.",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "Tidak ada koneksi ke server. API ({0}) tidak dapat dijangkau: server tidak berjalan atau sedang dimulai ulang, atau alamatnya salah.",
+  "Updates": "Pembaruan",
+  "Controleren op updates": "Memeriksa pembaruan",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "Periksa dan perbarui situs web Anda, seperti setelah versi baru: database, plugin, tema, bahasa, dan halaman",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "Periksa situs web Anda dan perbarui, seperti setelah versi baru easy2edit: database, plugin, tema, widget, bahasa, dan halaman. Tidak ada konten Anda yang akan ditimpa.",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "Periksa situs web Anda dan perbarui, seperti setelah versi baru easy2edit: database, plugin, tema, widget, bahasa, dan halaman.",
+  "easy2edit versie {0}, build {1}": "easy2edit versi {0}, build {1}",
+  "Controle nodig": "Pemeriksaan diperlukan",
+  "Laatst gecontroleerd voor build {0}.": "Terakhir diperiksa untuk build {0}.",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "Memeriksa situs web Anda dan memperbaruinya, seperti setelah versi baru easy2edit. Anda akan melihat setiap langkah dengan bilah kemajuan. Tidak ada halaman, desain, dan teks Anda yang akan ditimpa.",
+  "Wat wordt gecontroleerd": "Apa yang diperiksa"
 }

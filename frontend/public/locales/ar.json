@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "ربط MCP: يتيح لخوادم MCP ومساعدي الذكاء الاصطناعي الاتصال بهذا الموقع بأمان، بمفتاح خاص وصلاحيات خاصة لكل ارتباط.",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "ينتقل إلى موقع هذه الإضافة في لوحة الإدارة، مع شريط البحث على هذه الإضافة.",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "يبحث في قائمة الإدارة بأكملها: البلاطات والصفحات والإضافات المفعّلة.",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "اختر المدة التي سيتم خلالها عدم إزعاجك قبل أن يعود هذا السؤال مرة أخرى."
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "اختر المدة التي سيتم خلالها عدم إزعاجك قبل أن يعود هذا السؤال مرة أخرى.",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "لا يوجد اتصال بالخادم. ليس لديك اتصال بالإنترنت.",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "لا يوجد اتصال بالخادم. واجهة برمجة التطبيقات ({0}) لا تستجيب خلال {1} ثانية.",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "لا يوجد اتصال بالخادم. واجهة برمجة التطبيقات ({0}) يمكن الوصول إليها، ولكن الطلب لا يصل. من المحتمل أن عنوان هذا الموقع ({1}) غير مدرج في قائمة العناوين المسموح بها (CORS) الخاصة بواجهة برمجة التطبيقات.",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "لا يوجد اتصال بالخادم. لا يمكن الوصول إلى واجهة برمجة التطبيقات ({0}): الخادم لا يعمل أو تتم إعادة تشغيله، أو العنوان غير صحيح.",
+  "Updates": "التحديثات",
+  "Controleren op updates": "التحقق من التحديثات",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "تحقق من موقعك وقم بتحديثه، كما يحدث بعد إصدار جديد: قاعدة البيانات، الإضافات، القوالب، اللغات والصفحات",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "تحقق من موقعك وقم بتحديثه، كما يحدث بعد إصدار جديد من easy2edit: قاعدة البيانات، الإضافات، القوالب، الودجات، اللغات والصفحات. لن يتم استبدال أي من محتواك.",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "تحقق من موقعك وقم بتحديثه، كما يحدث بعد إصدار جديد من easy2edit: قاعدة البيانات، الإضافات، القوالب، الودجات، اللغات والصفحات.",
+  "easy2edit versie {0}, build {1}": "easy2edit الإصدار {0}، البناء {1}",
+  "Controle nodig": "التحقق مطلوب",
+  "Laatst gecontroleerd voor build {0}.": "آخر تحقق للبناء {0}.",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "يتحقق من موقعك ويقوم بتحديثه، تمامًا كما يحدث بعد إصدار جديد من easy2edit. سترى كل خطوة مع شريط تقدم. لن يتم استبدال أي من صفحاتك أو تصاميمك أو نصوصك.",
+  "Wat wordt gecontroleerd": "ما الذي يتم التحقق منه"
 }

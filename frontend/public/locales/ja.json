@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "MCP連携:MCPサーバーとAIアシスタントが、連携ごとに専用のキーと権限を使って、このウェブサイトと安全に接続できるようにします。",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "管理画面内のこのプラグインの場所へ移動し、検索バーにこのプラグインを表示します。",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "管理メニュー全体を検索します:タイル、ページ、有効になっているプラグインが対象です。",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "この質問が再び表示されるまでの間隔を選択してください。"
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "この質問が再び表示されるまでの間隔を選択してください。",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "サーバーに接続できません。インターネット接続がありません。",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "サーバーに接続できません。API({0})が{1}秒以内に応答しません。",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "サーバーに接続できません。API({0})には到達できますが、リクエストが届きません。このウェブサイトのアドレス({1})がAPIの許可アドレスリスト(CORS)に登録されていない可能性があります。",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "サーバーに接続できません。API({0})に到達できません:サーバーが稼働していないか再起動中か、またはアドレスが間違っています。",
+  "Updates": "アップデート",
+  "Controleren op updates": "アップデートを確認",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "新しいバージョンの後などに、ウェブサイトを確認して更新します：データベース、プラグイン、テーマ、言語、ページ",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "easy2editの新しいバージョンの後などに、ウェブサイトを確認して更新します：データベース、プラグイン、テーマ、ウィジェット、言語、ページ。コンテンツが上書きされることはありません。",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "easy2editの新しいバージョンの後などに、ウェブサイトを確認して更新します：データベース、プラグイン、テーマ、ウィジェット、言語、ページ。",
+  "easy2edit versie {0}, build {1}": "easy2edit バージョン {0}、ビルド {1}",
+  "Controle nodig": "確認が必要です",
+  "Laatst gecontroleerd voor build {0}.": "ビルド {0} 用に最後に確認されました。",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "easy2editの新しいバージョンの後などに、ウェブサイトを確認して更新します。各ステップは進行状況バーで表示されます。ページ、デザイン、テキストが上書きされることはありません。",
+  "Wat wordt gecontroleerd": "何が確認されるか"
 }

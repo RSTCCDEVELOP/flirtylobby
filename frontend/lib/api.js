@@ -7,6 +7,7 @@
 
 import { tx, translateTree } from "./t";
 import { rememberSandboxCode } from "./sandboxCode";
+import { diagnoseApi, diagText } from "./apiDiag";
 const CONFIGURED = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Opened via a LAN address (phone, other computer)? Then "localhost" for the API would be that device itself: use the page's host.
@@ -48,16 +49,31 @@ export class ApiError extends Error {
   }
 }
 
+// No answer at all (the connection broke, the server is down, or the browser blocked the call): the error carries what is wrong, found by looking at the API (see lib/apiDiag.js)
+export class ApiNetworkError extends Error {
+  constructor(original, diag) {
+    super(original?.message || "Failed to fetch");
+    this.diag = diag;
+  }
+}
+const isNoAnswer = (e) => !(e instanceof ApiError) && e?.name !== "AbortError" && /load failed|failed to fetch|networkerror|network request failed/i.test(e?.message || "");
+
 export async function api(path, { method = "GET", body } = {}) {
   const token = getToken();
-  const res = await fetch(`${getBase()}/api${path}`, {
-    method,
-    headers: {
-      ...(body && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Token ${token}` } : {}),
-    },
-    body: !body ? undefined : body instanceof FormData ? body : JSON.stringify(body),
-  });
+  let res;
+  try {
+    res = await fetch(`${getBase()}/api${path}`, {
+      method,
+      headers: {
+        ...(body && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Token ${token}` } : {}),
+      },
+      body: !body ? undefined : body instanceof FormData ? body : JSON.stringify(body),
+    });
+  } catch (e) {
+    if (typeof window !== "undefined" && isNoAnswer(e)) throw new ApiNetworkError(e, await diagnoseApi(getBase()));
+    throw e;
+  }
   const data = res.status === 204 ? null : await res.json().catch(() => null);
   if (res.status === 402 && typeof window !== "undefined") window.dispatchEvent(data?.code === "ai_credit" ? new CustomEvent("ai-credit-needed", { detail: data?.detail }) : new CustomEvent("payment-required", { detail: data?.detail }));  // no AI credit: the offer to buy credit (AiCreditAsk); else a subscription is needed  // a subscription is needed: see PaymentRequired
   // the login is not valid any more (the account was removed, or logged out elsewhere): log out here too. Only when it is still the token this call used: a call that started before logging in must not log the new login out again
@@ -80,8 +96,9 @@ export function apiUpload(path, form, onProgress, ctl) { // ctl: an object that 
     xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(Math.min(100, Math.round((e.loaded / e.total) * 100))); };
     if (ctl) ctl.abort = () => xhr.abort();
     xhr.onabort = () => reject(new Error("Geannuleerd"));
-    xhr.onerror = () => reject(new TypeError("Failed to fetch"));
-    xhr.ontimeout = () => reject(new TypeError("Failed to fetch"));
+    const noAnswer = async () => reject(new ApiNetworkError(new TypeError("Failed to fetch"), await diagnoseApi(getBase())));
+    xhr.onerror = noAnswer;
+    xhr.ontimeout = noAnswer;
     xhr.onload = () => {
       let data = null;
       try { data = xhr.status === 204 ? null : JSON.parse(xhr.responseText); } catch { data = null; }
@@ -121,6 +138,7 @@ export async function downloadPost(path, body, filename) {
 // Flatten DRF field errors into one readable string
 export function errorText(err) {
   // the browser says "Load failed" (Safari) or "Failed to fetch" (Chrome) when there was no answer at all: the connection broke, or the server did not answer in time
+  if (err instanceof ApiNetworkError && err.diag) return diagText(err.diag, tx);  // we know what is wrong: the API is down, offline, or it does not allow this website
   if (!(err instanceof ApiError) && /load failed|failed to fetch|networkerror|network request failed/i.test(err?.message || "")) return tx("Geen verbinding met de server: er kwam geen antwoord. Controleer je internet en probeer het opnieuw. Bij een groot bestand: probeer een kleiner bestand.");
   if (!(err instanceof ApiError) || !err.data) return tx(err.message || "Er ging iets mis.");
   if (err.data.detail) return tx(err.data.detail);

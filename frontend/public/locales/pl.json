@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "Integracja MCP: pozwala serwerom MCP i asystentom AI bezpiecznie łączyć się z tą witryną, z własnym kluczem i własnymi uprawnieniami dla każdego połączenia.",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Przechodzi do miejsca tej wtyczki w panelu administracyjnym, z paskiem wyszukiwania ustawionym na tę wtyczkę.",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Przeszukuje całe menu administracyjne: kafelki, strony i włączone wtyczki.",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Wybierz, jak długo nie będziesz niepokojony, zanim to pytanie powróci."
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Wybierz, jak długo nie będziesz niepokojony, zanim to pytanie powróci.",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "Brak połączenia z serwerem. Nie masz połączenia z internetem.",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "Brak połączenia z serwerem. API ({0}) nie odpowiada w ciągu {1} sekund.",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "Brak połączenia z serwerem. API ({0}) jest wprawdzie dostępne, ale żądanie nie dochodzi. Prawdopodobnie adres tej strony internetowej ({1}) nie znajduje się na liście dozwolonych adresów (CORS) API.",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "Brak połączenia z serwerem. API ({0}) jest niedostępne: serwer nie działa lub jest uruchamiany ponownie, albo adres jest nieprawidłowy.",
+  "Updates": "Aktualizacje",
+  "Controleren op updates": "Sprawdzanie aktualizacji",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "Sprawdź i zaktualizuj swoją stronę, tak jak po nowej wersji: baza danych, wtyczki, motywy, języki i strony",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "Sprawdź swoją stronę i zaktualizuj ją, tak jak po nowej wersji easy2edit: baza danych, wtyczki, motywy, widżety, języki i strony. Żadna z Twoich treści nie zostanie nadpisana.",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "Sprawdź swoją stronę i zaktualizuj ją, tak jak po nowej wersji easy2edit: bazę danych, wtyczki, motywy, widżety, języki i strony.",
+  "easy2edit versie {0}, build {1}": "easy2edit wersja {0}, build {1}",
+  "Controle nodig": "Wymagana kontrola",
+  "Laatst gecontroleerd voor build {0}.": "Ostatnio sprawdzono dla buildu {0}.",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "Sprawdza Twoją stronę i aktualizuje ją, tak jak po nowej wersji easy2edit. Każdy krok zobaczysz na pasku postępu. Żadna z Twoich stron, projektów ani tekstów nie zostanie nadpisana.",
+  "Wat wordt gecontroleerd": "Co jest sprawdzane"
 }

@@ -9551,5 +9551,19 @@
   "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "MCP कनेक्शन: MCP सर्वर और AI सहायकों को इस वेबसाइट से सुरक्षित रूप से जुड़ने दें, प्रत्येक कनेक्शन के लिए अपनी अलग कुंजी और अपने अलग अधिकारों के साथ।",
   "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "इस प्लगइन के स्थान पर एडमिन में जाता है, जिसमें खोज बार इस प्लगइन पर सेट है।",
   "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "पूरे एडमिन मेनू में खोजता है: टाइल्स, पेज और सक्रिय प्लगइन्स।",
-  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "चुनें कि यह प्रश्न दोबारा आने से पहले आपको कितने समय तक परेशान नहीं किया जाएगा।"
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "चुनें कि यह प्रश्न दोबारा आने से पहले आपको कितने समय तक परेशान नहीं किया जाएगा।",
+  "Geen verbinding met de server. Je hebt geen internetverbinding.": "सर्वर से कोई कनेक्शन नहीं है। आपके पास इंटरनेट कनेक्शन नहीं है।",
+  "Geen verbinding met de server. De API ({0}) antwoordt niet binnen {1} seconden.": "सर्वर से कोई कनेक्शन नहीं है। API ({0}) {1} सेकंड के भीतर प्रतिक्रिया नहीं देता है।",
+  "Geen verbinding met de server. De API ({0}) is wel bereikbaar, maar het verzoek komt niet door. Waarschijnlijk staat het adres van deze website ({1}) niet in de lijst met toegestane adressen (CORS) van de API.": "सर्वर से कोई कनेक्शन नहीं है। API ({0}) तक पहुंचा जा सकता है, लेकिन अनुरोध पूरा नहीं हो रहा है। संभवतः इस वेबसाइट का पता ({1}) API की अनुमत पतों (CORS) की सूची में नहीं है।",
+  "Geen verbinding met de server. De API ({0}) is niet bereikbaar: de server draait niet of wordt herstart, of het adres klopt niet.": "सर्वर से कोई कनेक्शन नहीं है। API ({0}) तक नहीं पहुंचा जा सकता: सर्वर चल नहीं रहा है या पुनः आरंभ हो रहा है, या पता सही नहीं है।",
+  "Updates": "अपडेट",
+  "Controleren op updates": "अपडेट के लिए जाँच करें",
+  "Controleer en werk je website bij, zoals na een nieuwe versie: database, plugins, thema's, talen en pagina's": "अपनी वेबसाइट की जाँच करें और उसे अपडेट करें, जैसे किसी नए संस्करण के बाद: डेटाबेस, प्लगइन्स, थीम, भाषाएँ और पेज",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.": "अपनी वेबसाइट की जाँच करें और उसे अपडेट करें, जैसे easy2edit के नए संस्करण के बाद: डेटाबेस, प्लगइन्स, थीम, विजेट्स, भाषाएँ और पेज। आपकी किसी भी सामग्री को ओवरराइट नहीं किया जाएगा।",
+  "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: de database, de plugins, de thema's, de widgets, de talen en de pagina's.": "अपनी वेबसाइट की जाँच करें और उसे अपडेट करें, जैसे easy2edit के नए संस्करण के बाद: डेटाबेस, प्लगइन्स, थीम, विजेट्स, भाषाएँ और पेज।",
+  "easy2edit versie {0}, build {1}": "easy2edit संस्करण {0}, बिल्ड {1}",
+  "Controle nodig": "जाँच आवश्यक है",
+  "Laatst gecontroleerd voor build {0}.": "बिल्ड {0} के लिए अंतिम बार जाँच की गई।",
+  "Controleert je website en werkt hem bij, net als na een nieuwe versie van easy2edit. Je ziet elke stap met een voortgangsbalk. Er wordt niets van je pagina's, ontwerpen en teksten overschreven.": "आपकी वेबसाइट की जाँच करता है और उसे अपडेट करता है, जैसे easy2edit के नए संस्करण के बाद। आप प्रत्येक चरण को प्रगति पट्टी के साथ देखेंगे। आपके किसी भी पेज, डिज़ाइन और टेक्स्ट को ओवरराइट नहीं किया जाएगा।",
+  "Wat wordt gecontroleerd": "क्या जाँचा जाता है"
 }

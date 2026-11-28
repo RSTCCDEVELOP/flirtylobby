@@ -11,6 +11,7 @@ export const ITEM_HELP = {
   "/dashboard": "Je startpagina: een overzicht van wat voor jou belangrijk is en snelle links naar de onderdelen die je gebruikt.",
   "/dashboard/admin/bomen": "De bomen van de website: hoeveel bomen er voor de website worden geplant en de voortgang.",
   "/dashboard/admin/branding": "Het logo, de kleuren en de afbeeldingen van de website als huisstijl, op één plek.",
+  "/dashboard/admin/updates": "Controleer je website en werk hem bij, zoals na een nieuwe versie van easy2edit: database, plugins, thema's, widgets, talen en pagina's. Er wordt niets van je content overschreven.",
   "/dashboard/admin/cache": "Het geheugen van de website (cache): hier maak je het leeg als je wijzigingen niet direct ziet.",
   "/dashboard/admin/component-requests": "De aanvragen voor nieuwe componenten die een ontwerp nodig had en de componentenset nog niet heeft: beoordelen en volgen.",
   "/dashboard/admin/entity": "De bedrijven, organisaties of verenigingen van deze website, met hun gegevens, adressen, betaalgegevens en de gekoppelde gebruikers.",
