@@ -276,3 +276,27 @@ def test_a_connection_file_can_be_saved_as_a_connection_when_it_does_not_exist(m
     p = APIClient()
     p.force_authenticate(get_user_model().objects.create(username="pp", email="pp@example.com"))
     assert p.post(RUN + "admin/clients/import", {"client_id": "mcp_2222222222222222", "secret": "mcp_2222222222222222." + "a" * 30}, format="json").status_code == 403
+
+
+def test_the_ip_check_uses_the_chosen_source_and_the_error_names_the_address(mcp, admin):
+    from apps.plugins import runtime
+    from apps.plugins.models import Plugin
+
+    c = make(admin, allowed_ips=["10.9.9.9"])
+    s = c["secret"]
+    call_from = lambda **meta: APIClient().post(RUN + "rpc", {"jsonrpc": "2.0", "id": 1, "method": "ping"}, format="json", HTTP_AUTHORIZATION=f"Bearer {s}", **meta)  # noqa: E731
+    r = call_from(HTTP_X_FORWARDED_FOR="10.9.9.9, 172.18.0.5")
+    assert r.status_code == 403  # the default does not read X-Forwarded-For
+    assert "This address may not connect:" in r.json()["error"]["message"]
+    for source, header, ok in (("x-forwarded-for-eerste", "10.9.9.9, 172.18.0.5", True), ("x-forwarded-for-laatste", "1.2.3.4, 10.9.9.9", True), ("x-forwarded-for-laatste", "10.9.9.9, 172.18.0.5", False)):
+        p = Plugin.objects.get(name="mcp")
+        p.config = {"ip_source": source}
+        p.save()
+        runtime.ensure_loaded(force=True)
+        assert (call_from(HTTP_X_FORWARDED_FOR=header).status_code == 200) is ok, (source, header)
+    p = Plugin.objects.get(name="mcp")
+    p.config = {"ip_source": "x-real-ip"}
+    p.save()
+    runtime.ensure_loaded(force=True)
+    assert call_from(HTTP_X_REAL_IP="10.9.9.9").status_code == 200
+    assert admin.post(RUN + "admin/resolve", {"hosts": []}, format="json").json()["ips"]  # the own address as the server sees it
