@@ -9543,5 +9543,13 @@
   "Rollen, groepen en rechten meemaken": "Utwórz też role, grupy i uprawnienia",
   "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Role, grupy z dostępem do modułów i użytkownicy demo należące do tej instalacji. Gdy opcja jest włączona, zostaną utworzone, gdy tylko instalacja zostanie skonfigurowana. Dodawane jest tylko to, czego brakuje: to, co już istnieje, pozostaje bez zmian.",
   "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "Gdy opcja jest wyłączona, możesz utworzyć je samodzielnie później w Admin → Users → Konfiguracja standardowa.",
-  "Voor deze installatie is er geen set van rollen en groepen.": "Dla tej instalacji nie ma zestawu ról i grup."
+  "Voor deze installatie is er geen set van rollen en groepen.": "Dla tej instalacji nie ma zestawu ról i grup.",
+  "Volgende vraag pas na": "Zapytaj ponownie po",
+  "{0} minuten (standaard)": "{0} min (domyślnie)",
+  "{0} minuten": "{0} min",
+  "{0} uur": "{0} godz.",
+  "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "Integracja MCP: pozwala serwerom MCP i asystentom AI bezpiecznie łączyć się z tą witryną, z własnym kluczem i własnymi uprawnieniami dla każdego połączenia.",
+  "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Przechodzi do miejsca tej wtyczki w panelu administracyjnym, z paskiem wyszukiwania ustawionym na tę wtyczkę.",
+  "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Przeszukuje całe menu administracyjne: kafelki, strony i włączone wtyczki.",
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Wybierz, jak długo nie będziesz niepokojony, zanim to pytanie powróci."
 }

@@ -244,6 +244,17 @@ def apply(key, user, mode="copy", scope="pages"):
 
 
 # ── a template from the current design: the settings of the system and the pages, without the data of users ──
+NOT_IN_TEMPLATE = ("mcp",)  # plugins that are never part of a template: they hold the access to this one website (connections and keys). A backup does include them.
+
+
+def strip_private_plugins(bundle):
+    """Take the plugins of NOT_IN_TEMPLATE out of a settings bundle (their entry, files, settings and data)."""
+    data = (((bundle or {}).get("sections") or {}).get("plugins") or {}).get("data")
+    if isinstance(data, dict) and isinstance(data.get("plugins"), list):
+        data["plugins"] = [i for i in data["plugins"] if i.get("name") not in NOT_IN_TEMPLATE]
+    return bundle
+
+
 SYSTEM_SECTIONS = ("branding", "theme", "themepacks", "installations", "modules", "languages", "dashboard", "plugins")  # no users, no secrets, no e-mail identities, no licence, no security keys
 
 
@@ -344,7 +355,7 @@ def suggest_details(lang=""):
         texts.append(f"- {p['title']}" + (f": {snippet}" if snippet else ""))
     th = SiteSettings.load().theme or {}
     mods = sorted(ModuleState.objects.filter(enabled=True).values_list("key", flat=True))
-    plugins = [p.title or p.name for p in Plugin.objects.filter(enabled=True)]
+    plugins = [p.title or p.name for p in Plugin.objects.filter(enabled=True).exclude(name__in=NOT_IN_TEMPLATE)]
     langs = list(Language.objects.filter(enabled=True).values_list("code", flat=True))
     existing = {r["key"] for r in listing()}
     # what the site itself gives
@@ -413,7 +424,7 @@ def build_from_site(key, name, description="", author="", version="1.0.0", previ
     if not re.fullmatch(r"\d{1,4}\.\d{1,4}\.\d{1,4}", version):
         raise TemplateError("De versie moet er zo uitzien: 1.0.0.")
     description = __import__("html").unescape(richtext.plain(richtext.clean_small(description, 1500))) if description else ""  # (plain text: no &amp; in the description)
-    bundle = sb.export(list(SYSTEM_SECTIONS), False, True, {"include_data": False})  # (no secrets, and no rows of the tables of plugins: those are data of users)
+    bundle = sb.export(list(SYSTEM_SECTIONS), False, True, {"include_data": False, "plugins": [p.name for p in Plugin.objects.exclude(name__in=NOT_IN_TEMPLATE)]})  # (no secrets, and no rows of the tables of plugins: those are data of users)
     chosen = set(pages) if pages else {p["key"] for p in site_pages() if p["default"]}
     only = chosen | (_menu_keys() if chosen else set())
     site, files, skipped = bs.collect_site(only)
@@ -430,7 +441,7 @@ def build_from_site(key, name, description="", author="", version="1.0.0", previ
         comp = componentpacks.active_key() or ""
     except Exception:  # noqa: BLE001
         comp = ""
-    requires = {"system_version": settings.SYSTEM_VERSION, "plugins": {p.name: {"version": p.version, "enabled": bool(p.enabled)} for p in Plugin.objects.all()}, "components": comp,
+    requires = {"system_version": settings.SYSTEM_VERSION, "plugins": {p.name: {"version": p.version, "enabled": bool(p.enabled)} for p in Plugin.objects.exclude(name__in=NOT_IN_TEMPLATE)}, "components": comp,
                 "languages": list(Language.objects.values_list("code", flat=True)), "modules": sorted(ModuleState.objects.filter(enabled=True).values_list("key", flat=True)),
                 "pages": [r["key"] for r in site["pages"]]}
     good = [(n, b) for n, b in previews if n.lower().endswith(IMG_EXT) and 0 < len(b) <= MAX_PREVIEW][:12]
@@ -567,6 +578,7 @@ def build_from_backup(backup, key, name, description="", author="", version="1.0
         stored = {f"files/{p}": zf.read(f"files/{p}") for p in wanted if f"files/{p}" in names}
         missing_files = [p for p in wanted if f"files/{p}" not in names]
     secs = {k: v for k, v in (full.get("sections") or {}).items() if k in SYSTEM_SECTIONS}
+    strip_private_plugins({"sections": secs})  # (the connections of the MCP plugin stay in the backup, never in a template)
     for it in ((secs.get("plugins") or {}).get("data") or {}).get("plugins", []):
         it.pop("data", None)  # the data of a plugin is data of people
         it["config"] = {k: v for k, v in (it.get("config") or {}).items() if not _secret_like(k)}
@@ -648,8 +660,10 @@ def apply_system(key, user):
     notes = []
     req = m["requires"] or {}
     with zipfile.ZipFile(t[0]) as zf:
-        bundle = json.loads(zf.read(m["system"]))
-        for name in (req.get("plugins") or {}):  # a plugin that the template needs and that is not here: from the library of the product (the settings file may bring it too)
+        bundle = strip_private_plugins(json.loads(zf.read(m["system"])))  # (a template that still has such a plugin does not bring it in)
+        for name in (req.get("plugins") or {}):
+            if name in NOT_IN_TEMPLATE:
+                continue  # a plugin that the template needs and that is not here: from the library of the product (the settings file may bring it too)
             from apps.plugins.models import Plugin
 
             if not Plugin.objects.filter(name=name).exists() and not any(i.get("name") == name and i.get("zip_b64") for i in ((bundle.get("sections") or {}).get("plugins") or {}).get("data", {}).get("plugins", [])):
@@ -724,7 +738,7 @@ def verify(key, fix=True, user=None):
     left = {k for k in want if k in modules.BY_KEY and not ModuleState.objects.filter(key=k, enabled=True).exists()}
     add("modules", "Modules", not left, (f"{len(want)} module(s) staan aan zoals in de template" if not left else f"Staan nog uit: {', '.join(sorted(left))}") + (f"; hersteld: {', '.join(sorted(off - left))}" if off - left else "") + (f"; onbekend in dit systeem: {', '.join(unknown)}" if unknown else ""), fixed=bool(off - left))
 
-    for name, info in (req.get("plugins") or {}).items():
+    for name, info in ((n, i) for n, i in (req.get("plugins") or {}).items() if n not in NOT_IN_TEMPLATE):
         row = Plugin.objects.filter(name=name).first()
         fixed = False
         if not row and fix and user is not None:

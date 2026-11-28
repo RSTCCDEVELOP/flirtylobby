@@ -7,8 +7,10 @@
 
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { IconCart, IconCheck, IconGlobe, IconGrid, IconHeart, IconRefresh, IconSettings, IconStar, IconUsers } from "./Icons";
+import { ADMIN_SECTION_GROUP } from "./DashboardShell";
 import Loading from "./Loading";
 import { SECTION_LABEL } from "./PluginParts";
 import { api, errorText } from "../lib/api";
@@ -27,6 +29,12 @@ const describe = (p) => (p.descriptions && (p.descriptions[getLanguage()] || p.d
 
 // The plugins that are installed on this site: one tile each, with the switch on the tile. "Beheren" opens the settings of the plugin.
 export function InstalledTiles({ plugins, onToggle, onManage }) {
+  const router = useRouter();
+  // "Bekijken": to the place of the plugin in the admin: the page of its section (System, Website ...) with the search on this plugin, so its tile is the one that is left
+  const view = (p) => {
+    try { sessionStorage.setItem("tilesearch", p.title || p.name); } catch { /* ok */ }
+    router.push(`/dashboard/admin/groep/${ADMIN_SECTION_GROUP[p.section] || "a-system"}`);
+  };
   const [q, setQ] = useState("");
   const list = plugins.filter((p) => matches(q, p.title, p.name, describe(p)));
   return (
@@ -55,6 +63,7 @@ export function InstalledTiles({ plugins, onToggle, onManage }) {
               </div>
               <div className="pl-actions">
                 <button type="button" className="btn sm primary" onClick={() => onManage(p)}>{tx("Beheren")}</button>
+                {p.enabled && <button type="button" className="btn sm" onClick={() => view(p)}>{tx("Bekijken")}</button>}
                 {p.enabled && p.has_web && p.menu && <a className="btn sm" href={`/dashboard/plugins/${p.name}`}>{tx("Open")}</a>}
               </div>
             </div>

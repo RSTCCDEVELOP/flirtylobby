@@ -9543,5 +9543,13 @@
   "Rollen, groepen en rechten meemaken": "Crea anche ruoli, gruppi e diritti",
   "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Ruoli, gruppi con accesso ai moduli e utenti demo che appartengono a questa installazione. Se attivo, vengono creati non appena l'installazione viene configurata. Viene solo aggiunto qualcosa: ciò che esiste già rimane com'è.",
   "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "Se disattivato, potrai crearli tu stesso più tardi in Admin → Users → Configurazione standard.",
-  "Voor deze installatie is er geen set van rollen en groepen.": "Per questa installazione non c'è nessun set di ruoli e gruppi."
+  "Voor deze installatie is er geen set van rollen en groepen.": "Per questa installazione non c'è nessun set di ruoli e gruppi.",
+  "Volgende vraag pas na": "Chiedi di nuovo dopo",
+  "{0} minuten (standaard)": "{0} minuti (predefinito)",
+  "{0} minuten": "{0} minuti",
+  "{0} uur": "{0} h",
+  "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "Il collegamento MCP: consente a server MCP e assistenti AI di connettersi in modo sicuro a questo sito web, con una propria chiave e propri permessi per ogni collegamento.",
+  "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Vai alla posizione di questo plugin nell'amministrazione, con la barra di ricerca su questo plugin.",
+  "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Cerca in tutto il menu di amministrazione: riquadri, pagine e plugin attivi.",
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Scegli per quanto tempo non verrai disturbato prima che questa domanda ritorni."
 }

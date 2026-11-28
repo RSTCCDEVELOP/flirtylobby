@@ -33,6 +33,23 @@ def touch(token_key):
     cache.set(idle_key(token_key), timezone.now().timestamp(), 60 * 60 * 24 * 8)
 
 
+EXTEND_CHOICES = (15, 30, 60, 120)  # minutes: the person may choose a longer time before the next "are you still there?" (per login)
+
+
+def extend_key(token_key):
+    return f"idle-ext:{token_key}"
+
+
+def set_extend(token_key, minutes):
+    """The person chose (in the question "are you still there?") to be left alone for this many minutes: kept per login. 0 or an unknown value = back to the setting of the website."""
+    from django.core.cache import cache
+
+    if minutes in EXTEND_CHOICES:
+        cache.set(extend_key(token_key), minutes, 60 * 60 * 24 * 8)
+    else:
+        cache.delete(extend_key(token_key))
+
+
 def is_idle(token):
     """True when this login did nothing for longer than the idle time of the website (plus the grace). A login without a known moment (a restart, a cleared cache) starts now: never a surprise logout."""
     from django.core.cache import cache
@@ -42,6 +59,7 @@ def is_idle(token):
     minutes = system.idle()["minutes"]
     if not minutes:
         return False
+    minutes = max(minutes, cache.get(extend_key(token.key)) or 0)
     last = cache.get(idle_key(token.key))
     if last is None:
         touch(token.key)

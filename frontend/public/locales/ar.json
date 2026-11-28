@@ -9543,5 +9543,13 @@
   "Rollen, groepen en rechten meemaken": "إنشاء الأدوار والمجموعات والصلاحيات أيضًا",
   "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "الأدوار والمجموعات مع صلاحية الوصول إلى الوحدات والمستخدمون التجريبيون التابعون لهذا التثبيت. عند التفعيل يتم إنشاؤها فور إعداد التثبيت. تتم الإضافة فقط: ما هو موجود أصلًا يبقى كما هو.",
   "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "عند الإيقاف، يمكنك إنشاؤها بنفسك لاحقًا في Admin → Users → الإعداد القياسي.",
-  "Voor deze installatie is er geen set van rollen en groepen.": "لا توجد مجموعة أدوار ومجموعات لهذا التثبيت."
+  "Voor deze installatie is er geen set van rollen en groepen.": "لا توجد مجموعة أدوار ومجموعات لهذا التثبيت.",
+  "Volgende vraag pas na": "اسألني مرة أخرى بعد",
+  "{0} minuten (standaard)": "{0} دقائق (افتراضي)",
+  "{0} minuten": "{0} دقائق",
+  "{0} uur": "{0} ساعة",
+  "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "ربط MCP: يتيح لخوادم MCP ومساعدي الذكاء الاصطناعي الاتصال بهذا الموقع بأمان، بمفتاح خاص وصلاحيات خاصة لكل ارتباط.",
+  "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "ينتقل إلى موقع هذه الإضافة في لوحة الإدارة، مع شريط البحث على هذه الإضافة.",
+  "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "يبحث في قائمة الإدارة بأكملها: البلاطات والصفحات والإضافات المفعّلة.",
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "اختر المدة التي سيتم خلالها عدم إزعاجك قبل أن يعود هذا السؤال مرة أخرى."
 }

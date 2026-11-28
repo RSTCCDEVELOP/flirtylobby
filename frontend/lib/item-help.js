@@ -18,6 +18,7 @@ export const ITEM_HELP = {
   "/dashboard/admin/help": "De helpitems van de website: de uitleg die bezoekers en beheerders in de Help zien.",
   "/dashboard/admin/log": "Het logboek: inloggen, uitloggen, belangrijke acties en fouten van de server. Een admin ziet alleen de regels van zijn eigen rang en lager.",
   "/dashboard/admin/onboarding": "De onboarding als reseller: aanmelden bij easy2edit en daarna een installatie inrichten.",
+  "/dashboard/admin/plugin/mcp": "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.",
   "/dashboard/admin/plugins": "De plugins van de website: installeren, aan- en uitzetten, instellen en verwijderen.",
   "/dashboard/admin/rights": "De rechten van gebruikers en groepen: wie wat mag zien, bewerken of verwijderen per onderdeel van de website.",
   "/dashboard/admin/settings-backup": "Een kopie van de instellingen van de website bewaren en weer terugzetten.",
@@ -108,6 +109,7 @@ export const HEADER_HELP = [
   [".faq-icon", "Help: kies Help site menu voor de uitleg van easy2edit, of Item help om een tegel of knop aan te wijzen."],
   [".edit-toggle", "Zet de website in bewerkmodus: je past teksten, afbeeldingen en blokken direct op de pagina aan."],
   [".theme-toggle", "Wisselt tussen de lichte en de donkere weergave."],
+  [".side-search-box", "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan."],
   [".user-trigger", "Je account: je profiel, het dashboard en uitloggen."],
 ];
 
@@ -126,6 +128,7 @@ export const BUTTON_HELP = {
   "Verwijderen": "Verwijdert dit onderdeel. Je krijgt eerst een bevestigingsvraag.",
   "Toevoegen": "Voegt het gekozen onderdeel toe aan de lijst.",
   "Openen": "Opent dit onderdeel.",
+  "Bekijken": "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.",
   "Open": "Opent dit onderdeel.",
   "Toepassen": "Past de gekozen instelling toe.",
   "Bevestigen": "Bevestigt je keuze.",

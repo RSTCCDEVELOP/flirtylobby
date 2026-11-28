@@ -46,6 +46,9 @@ export default function TileSearch({ selector = ".st-tile, .group-tile, .tile-ca
   const [n, setN] = useState(null);
   const box = useRef(null);
   const { user } = useAuth();
+  useEffect(() => {  // another screen sent us here to look at one thing (the button "Bekijken" of a plugin): the search starts with that word
+    try { const v = sessionStorage.getItem("tilesearch"); if (v) { sessionStorage.removeItem("tilesearch"); setQ(v); } } catch { /* ok */ }
+  }, []);
   useEffect(() => {
     const words = norm(q).split(/\s+/).filter(Boolean);
     const root = box.current?.closest("main") || document;

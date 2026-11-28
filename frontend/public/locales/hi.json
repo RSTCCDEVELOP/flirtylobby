@@ -9543,5 +9543,13 @@
   "Rollen, groepen en rechten meemaken": "भूमिकाएँ, ग्रुप और अधिकार भी बनाएँ",
   "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "इस इंस्टॉलेशन से जुड़ी भूमिकाएँ, मॉड्यूल तक पहुँच वाले ग्रुप और डेमो उपयोगकर्ता। चालू होने पर, इंस्टॉलेशन के सेट अप होते ही ये बन जाते हैं। केवल जोड़ा जाता है: जो पहले से मौजूद है वह जैसा है वैसा ही रहता है।",
   "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "बंद होने पर, आप इन्हें बाद में Admin → Users → स्टैंडर्ड सेटअप में खुद बना सकते हैं।",
-  "Voor deze installatie is er geen set van rollen en groepen.": "इस इंस्टॉलेशन के लिए भूमिकाओं और ग्रुप का कोई सेट नहीं है."
+  "Voor deze installatie is er geen set van rollen en groepen.": "इस इंस्टॉलेशन के लिए भूमिकाओं और ग्रुप का कोई सेट नहीं है.",
+  "Volgende vraag pas na": "दोबारा पूछें इसके बाद",
+  "{0} minuten (standaard)": "{0} मिनट (डिफ़ॉल्ट)",
+  "{0} minuten": "{0} मिनट",
+  "{0} uur": "{0} घंटे",
+  "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "MCP कनेक्शन: MCP सर्वर और AI सहायकों को इस वेबसाइट से सुरक्षित रूप से जुड़ने दें, प्रत्येक कनेक्शन के लिए अपनी अलग कुंजी और अपने अलग अधिकारों के साथ।",
+  "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "इस प्लगइन के स्थान पर एडमिन में जाता है, जिसमें खोज बार इस प्लगइन पर सेट है।",
+  "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "पूरे एडमिन मेनू में खोजता है: टाइल्स, पेज और सक्रिय प्लगइन्स।",
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "चुनें कि यह प्रश्न दोबारा आने से पहले आपको कितने समय तक परेशान नहीं किया जाएगा।"
 }

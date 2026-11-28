@@ -9543,5 +9543,13 @@
   "Rollen, groepen en rechten meemaken": "同时创建角色、用户组和权限",
   "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "属于此安装的角色、可访问模块的用户组和演示用户。开启后，它们会在安装设置完成后立即创建。只会新增内容：已有的内容保持不变。",
   "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "关闭后，你可以稍后在 Admin → Users → 标准设置 中自行创建。",
-  "Voor deze installatie is er geen set van rollen en groepen.": "此安装没有角色和用户组的预设。"
+  "Voor deze installatie is er geen set van rollen en groepen.": "此安装没有角色和用户组的预设。",
+  "Volgende vraag pas na": "下次询问间隔",
+  "{0} minuten (standaard)": "{0} 分钟（默认）",
+  "{0} minuten": "{0} 分钟",
+  "{0} uur": "{0} 小时",
+  "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "MCP 连接：让 MCP 服务器和 AI 助手安全地与本网站连接，每个连接拥有自己的密钥和权限。",
+  "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "跳转到此插件在管理后台中的位置，并在搜索栏中定位到此插件。",
+  "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "在整个管理菜单中搜索：图块、页面以及已启用的插件。",
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "选择在此问题再次出现之前，你希望被打扰的间隔时长。"
 }

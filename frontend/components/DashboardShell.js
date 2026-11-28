@@ -433,7 +433,7 @@ export default function DashboardShell({ children }) {
         )}
         {(canAdmin(user, mods) || user.is_staff) && (
           <div className="side-bottom">
-            {setup.menu_search !== false && <SidebarSearch onNavigate={() => setOpen(false)} />}
+            {setup.menu_search !== false && <SidebarSearch nav={[...ADMIN_NAV, ...(user.is_staff ? SUPER_NAV : [])]} onNavigate={() => setOpen(false)} />}
             <NavGroup id="a-manage" title="Beheer" active={inAdmin || inSuper} badge={0}>
               {canAdmin(user, mods) && <NavLink n={ADMIN_LINKS[0]} />}
               {user.is_staff && <NavLink n={ADMIN_LINKS[1]} />}

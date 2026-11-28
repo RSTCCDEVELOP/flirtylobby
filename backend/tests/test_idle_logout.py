@@ -67,3 +67,23 @@ def test_polling_does_not_keep_a_login_alive_and_never_means_never(login):
     system.save({"idle_minutes": "0"})
     cache.set(auth.idle_key(t.key), first - 10**6)
     assert c.get("/api/auth/me/").status_code == 200  # 0 = never logged out for being idle
+
+
+def test_a_longer_time_before_the_next_question_is_kept_per_login(login):
+    import time
+
+    u, t, c = login
+    system.save({"idle_minutes": "5", "idle_action": "ask"})
+    ago = lambda m: cache.set(auth.idle_key(t.key), time.time() - m * 60)  # noqa: E731
+    ago(20)
+    assert auth.is_idle(t) is True
+    ago(5.5)  # the question is open (inside the grace): he chooses 30 minutes
+    assert c.post("/api/auth/activity/", {"extend": 30}, format="json").status_code == 200
+    ago(20)
+    assert auth.is_idle(t) is False  # 30 minutes now
+    ago(40)
+    assert auth.is_idle(t) is True
+    ago(5.5)
+    c.post("/api/auth/activity/", {"extend": 7}, format="json")  # not a choice: back to the setting of the website
+    ago(20)
+    assert auth.is_idle(t) is True

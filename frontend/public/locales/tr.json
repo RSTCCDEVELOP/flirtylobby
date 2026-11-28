@@ -9543,5 +9543,13 @@
   "Rollen, groepen en rechten meemaken": "Roller, gruplar ve hakları da oluştur",
   "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Bu kuruluma ait roller, modüllere erişimi olan gruplar ve demo kullanıcılar. Açıksa, kurulum yapılır yapılmaz oluşturulurlar. Yalnızca ekleme yapılır: mevcut olanlar olduğu gibi kalır.",
   "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "Kapalıysa, bunları daha sonra Admin → Users → Standart kurulum bölümünden kendiniz oluşturabilirsiniz.",
-  "Voor deze installatie is er geen set van rollen en groepen.": "Bu kurulum için bir rol ve grup seti yok."
+  "Voor deze installatie is er geen set van rollen en groepen.": "Bu kurulum için bir rol ve grup seti yok.",
+  "Volgende vraag pas na": "Tekrar sorulsun:",
+  "{0} minuten (standaard)": "{0} dakika (varsayılan)",
+  "{0} minuten": "{0} dakika",
+  "{0} uur": "{0} saat",
+  "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "MCP bağlantısı: MCP sunucularının ve yapay zeka asistanlarının bu web sitesiyle güvenli bir şekilde bağlantı kurmasını sağlar; her bağlantı için kendi anahtarı ve kendi yetkileri vardır.",
+  "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Bu eklentinin yönetim panelindeki yerine, arama çubuğu bu eklentide olacak şekilde gider.",
+  "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Tüm yönetim menüsünde arama yapar: kutucuklar, sayfalar ve etkin olan eklentiler.",
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Bu sorunun tekrar sorulmasından önce ne kadar süre rahat bırakılmak istediğinizi seçin."
 }

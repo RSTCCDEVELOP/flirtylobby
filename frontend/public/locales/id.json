@@ -9543,5 +9543,13 @@
   "Rollen, groepen en rechten meemaken": "Buat juga peran, grup, dan hak akses",
   "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Peran, grup dengan akses ke modul, dan pengguna demo yang termasuk dalam instalasi ini. Jika aktif, semuanya dibuat segera setelah instalasi disiapkan. Hanya ada yang ditambahkan: apa yang sudah ada tetap seperti semula.",
   "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "Jika nonaktif, Anda dapat membuatnya sendiri nanti di Admin → Users → Setup standar.",
-  "Voor deze installatie is er geen set van rollen en groepen.": "Untuk instalasi ini tidak ada set peran dan grup."
+  "Voor deze installatie is er geen set van rollen en groepen.": "Untuk instalasi ini tidak ada set peran dan grup.",
+  "Volgende vraag pas na": "Tanya lagi setelah",
+  "{0} minuten (standaard)": "{0} menit (bawaan)",
+  "{0} minuten": "{0} menit",
+  "{0} uur": "{0} jam",
+  "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "Integrasi MCP: memungkinkan server MCP dan asisten AI terhubung dengan aman ke situs web ini, dengan kunci sendiri dan hak akses sendiri per integrasi.",
+  "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Membuka lokasi plugin ini di admin, dengan bilah pencarian diarahkan ke plugin ini.",
+  "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Mencari di seluruh menu admin: ubin, halaman, dan plugin yang aktif.",
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Pilih berapa lama kamu ingin dibiarkan tenang sebelum pertanyaan ini muncul kembali."
 }

@@ -338,11 +338,16 @@ def logout(request):
 @api_view(["POST"])
 def activity(request):
     """The screen says that the person is doing something (at most every half minute): the login stays alive for the idle time of the website."""
-    from apps.security.authentication import touch
+    from apps.security.authentication import set_extend, touch
 
     key = getattr(getattr(request, "auth", None), "key", "")
     if key:
         touch(key)
+        if isinstance(request.data, dict) and "extend" in request.data:  # {extend: minutes}: a longer time before the next question (see IdleGuard)
+            try:
+                set_extend(key, int(request.data.get("extend") or 0))
+            except (TypeError, ValueError):
+                set_extend(key, 0)
     return Response({"ok": True})
 
 

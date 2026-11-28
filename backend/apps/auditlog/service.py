@@ -28,6 +28,7 @@ EVENTS = {
     "user.created": ("Gebruiker aangemaakt", "Gebruikers"), "user.deleted": ("Gebruiker verwijderd", "Gebruikers"), "user.changed": ("Gebruiker gewijzigd", "Gebruikers"),
     "installation.applied": ("Installatie ingesteld", "Systeem"), "installation.removed": ("Installatie verwijderd", "Systeem"),
     "system.reset": ("Website gereset", "Systeem"), "system.log_cleared": ("Logboek geleegd", "Systeem"), "system.log_settings": ("Logboek-instelling gewijzigd", "Systeem"),
+    "mcp.write": ("MCP-koppeling: wijziging", "Systeem"), "mcp.created": ("MCP-koppeling gemaakt", "Systeem"), "mcp.changed": ("MCP-koppeling gewijzigd", "Systeem"), "mcp.renewed": ("MCP-sleutel vernieuwd", "Systeem"), "mcp.deleted": ("MCP-koppeling verwijderd", "Systeem"),
     "module.changed": ("Module aan of uit gezet", "Systeem"), "backup.created": ("Backup gemaakt", "Systeem"), "backup.restored": ("Backup teruggezet", "Systeem"),
     "reseller.onboarding": ("Onboarding als reseller", "Inloggen"),
     "system.error": ("Storing", "Storingen"),  # errors of the server (see handler.py): for superadmins

@@ -9543,5 +9543,13 @@
   "Rollen, groepen en rechten meemaken": "Create roles, groups and rights too",
   "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Roles, groups with access to modules and demo users that belong to this installation. If this is on, they are created as soon as the installation is set up. Things are only added: whatever already exists stays as it is.",
   "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "If this is off, you can create them yourself later at Admin → Users → Standard setup.",
-  "Voor deze installatie is er geen set van rollen en groepen.": "There is no set of roles and groups for this installation."
+  "Voor deze installatie is er geen set van rollen en groepen.": "There is no set of roles and groups for this installation.",
+  "Volgende vraag pas na": "Ask again after",
+  "{0} minuten (standaard)": "{0} minutes (default)",
+  "{0} minuten": "{0} minutes",
+  "{0} uur": "{0} hour(s)",
+  "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "The MCP connection: lets MCP servers and AI assistants connect safely to this website, with their own key and their own rights per connection.",
+  "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Goes to the place of this plugin in the admin, with the search bar set to this plugin.",
+  "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Searches the whole admin menu: tiles, pages and plugins that are on.",
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Choose how long you are left alone before this question comes back."
 }

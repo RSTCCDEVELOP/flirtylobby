@@ -1,5 +1,7 @@
 # Plugins
 
+> **Een nieuwe plugin maken?** Lees eerst de handleiding `md/operations/plugin-development-guide.md` (Engels): zo is de plugin `mcp` gemaakt, hoe schermen in de pagina draaien (inline, niet in een frame), de standaard opmaak, item help, en het gebruik van de easy2edit-objecten en -componenten met hun `data-easy2edit-tag`.
+
 **Alleen door onze ontwikkelaar.** Een plugin draait pas als hij met de privésleutel van de ontwikkelaar is ondertekend (`plugin_build`); het systeem controleert elk bestand. Een plugin is gemaakt voor één versie van het systeem (`system_version`) en gebruikt de database en de talen van het systeem.
 
 Een plugin is een los programma dat met het systeem samenwerkt. Het staat in `plugins/<naam>/` (die map zit **niet** in Git) en wordt als (ondertekend) zipbestand geüpload bij **Admin → Systeem → Plugins**; tijdens het ontwikkelen zet je hem direct in die map, de pluginpagina vindt hem vanzelf.

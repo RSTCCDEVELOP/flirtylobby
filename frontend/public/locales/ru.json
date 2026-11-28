@@ -9543,5 +9543,13 @@
   "Rollen, groepen en rechten meemaken": "Создавать также роли, группы и права",
   "Rollen, groepen met toegang tot modules en demo-gebruikers die bij deze installatie horen. Staat dit aan, dan worden ze gemaakt zodra de installatie wordt ingesteld. Er wordt alleen iets toegevoegd: wat al bestaat blijft zoals het is.": "Роли, группы с доступом к модулям и демо-пользователи, относящиеся к этой установке. Если включено, они создаются сразу после настройки установки. Добавляется только новое: то, что уже есть, остаётся как есть.",
   "Staat dit uit, dan kun je ze later zelf maken bij Admin → Users → Standaard setup.": "Если выключено, вы сможете создать их позже самостоятельно в разделе Admin → Users → Стандартная настройка.",
-  "Voor deze installatie is er geen set van rollen en groepen.": "Для этой установки нет набора ролей и групп."
+  "Voor deze installatie is er geen set van rollen en groepen.": "Для этой установки нет набора ролей и групп.",
+  "Volgende vraag pas na": "Спросить снова через",
+  "{0} minuten (standaard)": "{0} мин. (по умолчанию)",
+  "{0} minuten": "{0} мин.",
+  "{0} uur": "{0} ч",
+  "De MCP-koppeling: laat MCP-servers en AI-assistenten veilig met deze website verbinden, met een eigen sleutel en eigen rechten per koppeling.": "Подключение MCP: позволяет MCP-серверам и ИИ-ассистентам безопасно подключаться к этому сайту, с собственным ключом и собственными правами для каждого подключения.",
+  "Gaat naar de plaats van deze plugin in de admin, met de zoekbalk op deze plugin.": "Переходит к месту расположения этого плагина в админке, с панелью поиска, настроенной на этот плагин.",
+  "Zoekt in het hele adminmenu: tegels, pagina's en plugins die aan staan.": "Выполняет поиск по всему меню админки: плитки, страницы и включённые плагины.",
+  "Kies hoe lang je met rust gelaten wordt voordat deze vraag terugkomt.": "Выберите, как долго вас не будут беспокоить, прежде чем этот вопрос появится снова."
 }

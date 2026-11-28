@@ -66,8 +66,8 @@ export default function GroupTiles({ id }) {
   let items;
   if (admin) {
     const own = ADMIN_NAV.filter((n) => (ADMIN_GROUP_OF[n.href] === id || (ALSO_IN[n.href] || []).includes(id)) && (() => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); })());
-    const fromPlugins = plugins.filter((x) => x.has_admin && (ADMIN_SECTION_GROUP[x.section] || "a-system") === id).flatMap((x) => [{ href: `/dashboard/admin/plugin/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true },
-      ...(x.entries || []).map((e) => ({ href: e.href || `/dashboard/admin/plugin/${x.name}?tab=${e.tab}`, label: e.label, icon: <IconGrid />, plugin: true }))]);
+    const fromPlugins = plugins.filter((x) => x.has_admin && (ADMIN_SECTION_GROUP[x.section] || "a-system") === id).flatMap((x) => [{ href: `/dashboard/admin/plugin/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true, pname: x.name },
+      ...(x.entries || []).map((e) => ({ href: e.href || `/dashboard/admin/plugin/${x.name}?tab=${e.tab}`, label: e.label, icon: <IconGrid />, plugin: true, pname: x.name }))]);
     items = [...own, ...fromPlugins].map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.plural || entity.label, big: tx("Over je {0}", tx(entity.plural || entity.label).toLowerCase()) } : n));
   } else {
     const own = COMMUNITY.filter((n) => COMMUNITY_GROUP_OF[n.href] === id && (n.module === "any" ? ["profiles", "discover", "messages", "chat"].some((m) => mods[m] !== false) : mods[n.module] !== false));
@@ -91,7 +91,7 @@ export default function GroupTiles({ id }) {
         {items.map((n) => {
           const t = TILES.find((x) => x.href === n.href);
           return (
-            <Link key={n.href} href={n.href} className="card stat link-card group-tile" data-help-key={n.href} data-help-text={n.plugin ? `${tx(n.label)}: ${tx("een plugin van deze website. Open hem om hem te gebruiken of in te stellen.")}` : undefined} onClick={(e) => gateClick(e, n.href, router)}>
+            <Link key={n.href} href={n.href} className="card stat link-card group-tile" data-find={n.pname ? `${n.pname} ${n.label}` : undefined} data-help-key={n.href} data-help-text={n.plugin ? `${tx(n.label)}: ${tx("een plugin van deze website. Open hem om hem te gebruiken of in te stellen.")}` : undefined} onClick={(e) => gateClick(e, n.href, router)}>
               <span className="group-tile-ico">{n.icon}</span>
               {countOf(n) > 0 && <span className="cart-count group-tile-count" title={tx("Nieuw")}>{countOf(n)}</span>}
               <strong style={{ fontSize: "1.1rem" }}>{tx(n.label)}</strong>
